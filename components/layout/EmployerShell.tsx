@@ -95,7 +95,7 @@ export function EmployerShell({ children }: { children: React.ReactNode }) {
                   TAG
                 </span>
                 <span className="text-[10px] uppercase font-bold tracking-widest text-primary leading-none">
-                  Employer Console
+                  Company Console
                 </span>
               </div>
             </Link>

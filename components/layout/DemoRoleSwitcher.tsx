@@ -44,7 +44,7 @@ export function DemoRoleSwitcher() {
   const roles = [
     { id: "public", label: "Public Market", sub: "Guest", icon: <Globe className="w-3.5 h-3.5" /> },
     { id: "candidate", label: "Candidate", sub: "Ananya", icon: <UserIcon className="w-3.5 h-3.5" /> },
-    { id: "employer", label: "Employer", sub: "RazorWave", icon: <Building2 className="w-3.5 h-3.5" /> },
+    { id: "employer", label: "Company", sub: "RazorWave", icon: <Building2 className="w-3.5 h-3.5" /> },
     { id: "admin", label: "Platform Admin", sub: "Ops", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
   ];
 

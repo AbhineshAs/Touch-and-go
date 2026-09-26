@@ -21,7 +21,7 @@ interface AuthContextType {
   signup: (data: { name: string; email: string; role: UserRole }) => Promise<User>;
   logout: (redirectTo?: string) => Promise<void>;
   switchRole: (role: UserRole) => Promise<User>;
-  refreshAuth: () => void;
+  refreshAuth: () => User | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,30 +32,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const refreshAuth = useCallback(() => {
+  const refreshAuth = useCallback((): User | null => {
     const storedUser = getStoredUser();
     const storedToken = getStoredToken();
     if (storedUser && storedToken) {
       setUser(storedUser);
       setToken(storedToken);
+      setIsLoading(false);
+      return storedUser;
     } else {
       setUser(null);
       setToken(null);
+      setIsLoading(false);
+      return null;
     }
-    setIsLoading(false);
   }, []);
 
   useEffect(() => {
     refreshAuth();
 
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "tag_auth_token" || e.key === "tag_auth_user") {
+    const handleStorageChange = (e?: StorageEvent | Event) => {
+      if (
+        !e ||
+        !("key" in e) ||
+        (e as StorageEvent).key === "tag_auth_token" ||
+        (e as StorageEvent).key === "tag_auth_user" ||
+        (e as StorageEvent).key === "tag_active_role" ||
+        (e as StorageEvent).key === null
+      ) {
         refreshAuth();
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("tag_auth_changed", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("tag_auth_changed", handleStorageChange);
+    };
   }, [refreshAuth]);
 
   const login = async (email: string, role: UserRole): Promise<User> => {

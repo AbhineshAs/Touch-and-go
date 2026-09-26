@@ -1,44 +1,22 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { SearchInput } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
-import { MatchBadge, SkillBadge } from "@/components/ui/Badge";
-import { LoadingState, EmptyState } from "@/components/ui/States";
-import { Job } from "@/types";
-import { getJobs } from "@/lib/api/jobs";
-import { getSavedJobIds, toggleSaveJob } from "@/lib/api/candidate";
+import { SkillBadge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/States";
+import { SAMPLE_JOBS_CATALOGUE } from "@/lib/candidate/jobs/matcher";
 import { formatSalaryRange, formatRelativeTime } from "@/lib/utils";
-import { Bookmark, MapPin, Search, ShieldCheck } from "lucide-react";
+import { Bookmark, MapPin, ShieldCheck } from "lucide-react";
+import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 
 export default function CandidateJobsPage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
+  const { savedJobIds, toggleSaveJob } = useCandidate();
   const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      const [allJobs, saved] = await Promise.all([getJobs(), getSavedJobIds()]);
-      setJobs(allJobs);
-      setSavedJobIds(saved);
-      setIsLoading(false);
-    }
-    load();
-  }, []);
-
-  const handleToggleSave = async (jobId: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    const isSaved = savedJobIds.includes(jobId);
-    setSavedJobIds((prev) => (isSaved ? prev.filter((id) => id !== jobId) : [...prev, jobId]));
-    const res = await toggleSaveJob(jobId);
-    setSavedJobIds(res.savedIds);
-  };
-
-  const filteredJobs = jobs.filter(
+  const filteredJobs = SAMPLE_JOBS_CATALOGUE.filter(
     (j) =>
       j.title.toLowerCase().includes(search.toLowerCase()) ||
       j.organizationName.toLowerCase().includes(search.toLowerCase()) ||
@@ -50,9 +28,9 @@ export default function CandidateJobsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Find Jobs</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Find Sample Jobs</h1>
           <p className="text-xs sm:text-sm text-text-secondary">
-            Verified engineering openings calculated against your confirmed credentials.
+            Browse our typed catalogue of sample technology openings across seniorities and domains.
           </p>
         </div>
 
@@ -66,9 +44,7 @@ export default function CandidateJobsPage() {
         </div>
       </div>
 
-      {isLoading ? (
-        <LoadingState message="Discovering verified jobs..." />
-      ) : filteredJobs.length === 0 ? (
+      {filteredJobs.length === 0 ? (
         <EmptyState
           title="No jobs matched your search"
           description="Try broadening your search keywords or exploring recommended roles."
@@ -99,6 +75,9 @@ export default function CandidateJobsPage() {
                           {job.organizationVerified && (
                             <ShieldCheck className="w-3.5 h-3.5 text-success" />
                           )}
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-border-subtle text-text-muted font-medium">
+                            Sample Job
+                          </span>
                         </div>
                         <Link href={`/jobs/${job.slug}`}>
                           <h3 className="text-base font-bold text-text-primary hover:text-primary transition-colors leading-snug">
@@ -109,9 +88,9 @@ export default function CandidateJobsPage() {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {job.matchScore && <MatchBadge score={job.matchScore} size="sm" />}
                       <button
-                        onClick={(e) => handleToggleSave(job.id, e)}
+                        type="button"
+                        onClick={() => toggleSaveJob(job.id)}
                         className="p-1.5 rounded-lg border border-border text-text-muted hover:text-primary transition-colors cursor-pointer"
                         title={isSaved ? "Saved" : "Save Job"}
                       >
@@ -147,7 +126,7 @@ export default function CandidateJobsPage() {
                   <span className="text-text-muted">Posted {formatRelativeTime(job.publishedAt)}</span>
                   <Link href={`/jobs/${job.slug}`}>
                     <Button size="sm" variant="primary">
-                      View Match & Apply
+                      View Match Details
                     </Button>
                   </Link>
                 </div>

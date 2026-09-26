@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { LoadingState } from "@/components/ui/States";
 import { Mail, CheckCircle2, RefreshCw, ArrowRight } from "lucide-react";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { UserRole } from "@/types";
 
 function VerifyContent() {
   const router = useRouter();
@@ -13,6 +15,7 @@ function VerifyContent() {
   const email = searchParams.get("email") || "ananya.sharma@example.com";
   const role = searchParams.get("role") || "candidate";
   const redirect = searchParams.get("redirect");
+  const { user, login, refreshAuth } = useAuth();
 
   const [otp, setOtp] = useState(["7", "2", "9", "4", "1", "0"]);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -33,13 +36,23 @@ function VerifyContent() {
     setIsVerifying(false);
     setIsVerified(true);
 
+    if (!user) {
+      try {
+        await login(email, (role as UserRole) || "employer");
+      } catch {
+        refreshAuth();
+      }
+    } else {
+      refreshAuth();
+    }
+
     setTimeout(() => {
       if (redirect) {
         router.push(redirect);
       } else if (role === "employer") {
-        router.push("/employer/organization");
+        router.push("/employer/organization?setup=true");
       } else {
-        router.push("/candidate/profile/resume");
+        router.push("/candidate/dashboard");
       }
     }, 1200);
   };

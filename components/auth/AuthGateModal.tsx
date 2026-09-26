@@ -4,12 +4,10 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/lib/auth/AuthContext";
 import {
   Lock,
   Sparkles,
   CheckCircle2,
-  ArrowRight,
   ShieldCheck,
   UserCheck,
   Building2,
@@ -37,9 +35,6 @@ export function AuthGateModal({
   onAuthenticated,
 }: AuthGateModalProps) {
   const router = useRouter();
-  const { login } = useAuth();
-  const [isDemoSigningIn, setIsDemoSigningIn] = React.useState(false);
-
   const destination = redirectUrl || (typeof window !== "undefined" ? window.location.pathname : "/jobs");
 
   const handleSignInRedirect = () => {
@@ -50,19 +45,6 @@ export function AuthGateModal({
   const handleSignUpRedirect = () => {
     onClose();
     router.push(`/sign-up?role=candidate&redirect=${encodeURIComponent(destination)}`);
-  };
-
-  const handleQuickDemoCandidate = async () => {
-    setIsDemoSigningIn(true);
-    try {
-      await login("ananya.sharma@example.com", "candidate");
-      onClose();
-      if (onAuthenticated) {
-        onAuthenticated();
-      }
-    } catch {
-      setIsDemoSigningIn(false);
-    }
   };
 
   return (
@@ -107,28 +89,6 @@ export function AuthGateModal({
             <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
             <span>Track direct employer review status & schedule interviews</span>
           </div>
-        </div>
-
-        {/* Quick 1-Click Demo Login button */}
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider">
-              1-Click Demo Access
-            </span>
-            <span className="text-[10px] text-emerald-700 bg-white/70 px-2 py-0.5 rounded-full font-semibold border border-emerald-200">
-              Instant
-            </span>
-          </div>
-          <Button
-            variant="primary"
-            size="md"
-            className="w-full bg-gradient-to-r from-[#197B69] to-[#12584B] hover:opacity-95"
-            isLoading={isDemoSigningIn}
-            rightIcon={<ArrowRight className="w-4 h-4" />}
-            onClick={handleQuickDemoCandidate}
-          >
-            Continue as Ananya Sharma (Candidate)
-          </Button>
         </div>
 
         {/* Standard Auth Options */}

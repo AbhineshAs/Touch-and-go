@@ -1,39 +1,25 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Tabs } from "@/components/ui/Tabs";
-import { StatusBadge, MatchBadge } from "@/components/ui/Badge";
-import { LoadingState, EmptyState } from "@/components/ui/States";
-import { Application, ApplicationStage } from "@/types";
-import { getApplications } from "@/lib/api/applications";
+import { EmptyState } from "@/components/ui/States";
 import { formatDate } from "@/lib/utils";
 import {
   FileText,
-  Building2,
   Calendar,
   ArrowRight,
-  Sparkles,
   MapPin,
   Clock,
+  ShieldCheck,
 } from "lucide-react";
+import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 
 export default function CandidateApplicationsPage() {
   const [activeTab, setActiveTab] = useState("all");
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      const data = await getApplications("prof_cand_01");
-      setApplications(data);
-      setIsLoading(false);
-    }
-    load();
-  }, []);
+  const { applications } = useCandidate();
 
   const tabs = [
     { id: "all", label: "All Applications", count: applications.length },
@@ -57,11 +43,6 @@ export default function CandidateApplicationsPage() {
       label: "Offer / Decision",
       count: applications.filter((a) => a.stage === "Decision").length,
     },
-    {
-      id: "closed",
-      label: "Closed",
-      count: applications.filter((a) => a.stage === "Closed").length,
-    },
   ];
 
   const filtered = applications.filter((a) => {
@@ -72,23 +53,31 @@ export default function CandidateApplicationsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1 pb-4 border-b border-border">
-        <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-          Your Applications
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+            Your Applications ({applications.length})
+          </h1>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-primary-soft text-primary font-bold">
+            Simulated Workspace
+          </span>
+        </div>
         <p className="text-xs sm:text-sm text-text-secondary">
-          Track real-time recruiter review stages, scheduled interviews, and hiring decisions.
+          Track real-time candidate review stages, scheduled interviews, and simulated application timelines.
         </p>
       </div>
 
       {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      {isLoading ? (
-        <LoadingState message="Loading your active applications..." />
-      ) : filtered.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState
+          icon={<FileText className="w-8 h-8 text-text-muted" />}
           title="No applications in this stage"
-          description="Explore published opportunities matching your verified skills."
+          description={
+            applications.length === 0
+              ? "You haven't submitted any simulated applications yet. Explore recommended sample roles to test the process."
+              : "No applications found in this specific stage filter."
+          }
           action={{
             label: "Explore Recommended Jobs",
             onClick: () => (window.location.href = "/candidate/recommended"),
@@ -101,20 +90,24 @@ export default function CandidateApplicationsPage() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3.5">
-                    <img
-                      src={app.organizationLogo}
-                      alt={app.organizationName}
-                      className="w-12 h-12 rounded-xl object-cover border border-border shrink-0"
-                    />
+                    {app.organizationLogo ? (
+                      <img
+                        src={app.organizationLogo}
+                        alt={app.organizationName}
+                        className="w-12 h-12 rounded-xl object-cover border border-border shrink-0"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center shrink-0">
+                        {app.organizationName.charAt(0)}
+                      </div>
+                    )}
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold text-text-secondary">
                         {app.organizationName}
                       </span>
-                      <Link href={`/candidate/applications/${app.id}`}>
-                        <h3 className="text-base sm:text-lg font-bold text-text-primary hover:text-primary transition-colors leading-snug">
-                          {app.jobTitle}
-                        </h3>
-                      </Link>
+                      <h3 className="text-base sm:text-lg font-bold text-text-primary leading-snug">
+                        {app.jobTitle}
+                      </h3>
                       <div className="flex items-center gap-3 text-xs text-text-muted mt-1">
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3.5 h-3.5" />
@@ -129,31 +122,29 @@ export default function CandidateApplicationsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-2">
-                    <StatusBadge status={app.stage} />
-                    {app.overallAlignment && (
-                      <MatchBadge score={app.overallAlignment} size="sm" />
-                    )}
-                  </div>
+                  <span className="px-3 py-1 rounded-full bg-primary-soft text-primary-dark font-bold text-xs">
+                    {app.stage}
+                  </span>
                 </div>
 
-                {/* Progress Mini Step Bar */}
-                <div className="p-3.5 rounded-xl bg-background border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center gap-2">
+                {app.notes && (
+                  <div className="p-3 rounded-lg bg-background border border-border-subtle text-xs text-text-secondary">
+                    <span className="font-semibold text-text-primary">Cover Note: </span>
+                    {app.notes}
+                  </div>
+                )}
+
+                <div className="p-3 rounded-xl bg-background border border-border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2 text-text-muted">
                     <Clock className="w-4 h-4 text-primary" />
                     <span>
-                      Latest Activity:{" "}
-                      <strong className="text-text-primary">
-                        {app.timeline[app.timeline.length - 1]?.title}
-                      </strong>
+                      Application status: <strong className="text-text-primary">{app.stage}</strong>
                     </span>
                   </div>
-
-                  <Link href={`/candidate/applications/${app.id}`}>
-                    <Button size="sm" variant="primary" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                      View Detailed Timeline
-                    </Button>
-                  </Link>
+                  <div className="flex items-center gap-1 text-[11px] text-text-muted">
+                    <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                    <span>Local test simulation</span>
+                  </div>
                 </div>
               </div>
             </Card>

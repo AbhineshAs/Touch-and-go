@@ -35,9 +35,9 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Employers */}
+          {/* Companies */}
           <div className="flex flex-col gap-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">For Employers</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary">For Companies</h4>
             <ul className="flex flex-col gap-2 text-xs text-text-secondary">
               <li><Link href="/employer/jobs/new" className="hover:text-primary transition-colors">Publish a Job</Link></li>
               <li><Link href="/employer/dashboard" className="hover:text-primary transition-colors">Applicant Pipelines</Link></li>

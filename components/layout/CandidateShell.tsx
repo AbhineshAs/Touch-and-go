@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { MOCK_USERS } from "@/lib/mocks/data";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 interface NavItem {
@@ -34,20 +35,41 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { user: authUser, logout } = useAuth();
-  const user = authUser || MOCK_USERS.candidate;
+  const { candidateRecord, resetAll } = useCandidate();
+
+  const candidateName = candidateRecord?.identity.fullName || authUser?.name || "Alen William";
+  const candidateEmail = candidateRecord?.identity.email || authUser?.email || "alenwilliam92@gmail.com";
+  const candidateAvatar =
+    candidateName.toLowerCase().includes("ananya")
+      ? MOCK_USERS.candidate.avatarUrl
+      : undefined;
+
+  const applicationsCount = candidateRecord?.applications.length || 0;
+  const savedJobsCount = candidateRecord?.savedJobIds.length || 0;
 
   const navItems: NavItem[] = [
     { label: "Overview", href: "/candidate/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
     { label: "Find Jobs", href: "/candidate/jobs", icon: <Search className="w-4 h-4" /> },
     { label: "Recommended", href: "/candidate/recommended", icon: <Sparkles className="w-4 h-4" /> },
-    { label: "Applications", href: "/candidate/applications", icon: <FileText className="w-4 h-4" />, badge: 2 },
-    { label: "Saved Jobs", href: "/candidate/saved", icon: <Bookmark className="w-4 h-4" />, badge: 2 },
+    {
+      label: "Applications",
+      href: "/candidate/applications",
+      icon: <FileText className="w-4 h-4" />,
+      badge: applicationsCount > 0 ? applicationsCount : undefined,
+    },
+    {
+      label: "Saved Jobs",
+      href: "/candidate/saved",
+      icon: <Bookmark className="w-4 h-4" />,
+      badge: savedJobsCount > 0 ? savedJobsCount : undefined,
+    },
     { label: "Profile", href: "/candidate/profile", icon: <User className="w-4 h-4" /> },
   ];
 
+
   return (
     <ProtectedRoute allowedRoles={["candidate", "admin"]}>
-      <div className="min-h-screen flex flex-col lg:flex-row bg-background text-text-primary">
+      <div className="min-h-screen lg:h-screen flex flex-col lg:flex-row bg-background text-text-primary lg:overflow-hidden">
       {/* Mobile Top Bar */}
       <header className="lg:hidden h-16 bg-surface/90 backdrop-blur-md border-b border-border px-4 flex items-center justify-between sticky top-0 z-30">
         <Link href="/candidate/dashboard" className="flex items-center gap-2.5">
@@ -64,7 +86,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
             aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
           </Link>
           <button
             onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
@@ -79,7 +101,8 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
       {/* Sidebar (Desktop + Mobile Drawer) */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border/80 flex flex-col justify-between p-4.5 transition-transform duration-200 lg:static lg:translate-x-0 shadow-xs",
+          "fixed inset-y-0 left-0 z-40 w-64 bg-surface border-r border-border/80 flex flex-col justify-between p-4.5 transition-transform duration-200 shadow-xs",
+          "lg:static lg:h-full lg:w-64 lg:shrink-0 lg:translate-x-0 overflow-y-auto",
           mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -167,55 +190,85 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
             href="/candidate/notifications"
             onClick={() => setMobileSidebarOpen(false)}
             className={cn(
-              "flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-background-alt transition-colors",
-              pathname === "/candidate/notifications" && "bg-primary-soft text-primary-dark"
+              "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 relative",
+              pathname === "/candidate/notifications"
+                ? "bg-primary-soft text-primary-dark font-bold shadow-2xs"
+                : "text-text-secondary hover:text-text-primary hover:bg-background-alt"
             )}
           >
             <div className="flex items-center gap-3">
-              <Bell className="w-4 h-4 text-text-muted" />
+              <Bell className={cn("w-4 h-4", pathname === "/candidate/notifications" ? "text-primary" : "text-text-muted")} />
               <span>Notifications</span>
             </div>
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="w-2 h-2 rounded-full bg-[#197B69] shrink-0" />
+            {pathname === "/candidate/notifications" && (
+              <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-primary" />
+            )}
           </Link>
 
           <Link
             href="/candidate/settings"
             onClick={() => setMobileSidebarOpen(false)}
             className={cn(
-              "flex items-center gap-3 px-3.5 py-2 rounded-xl text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-background-alt transition-colors",
-              pathname === "/candidate/settings" && "bg-primary-soft text-primary-dark"
+              "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 relative",
+              pathname === "/candidate/settings"
+                ? "bg-primary-soft text-primary-dark font-bold shadow-2xs"
+                : "text-text-secondary hover:text-text-primary hover:bg-background-alt"
             )}
           >
-            <Settings className="w-4 h-4 text-text-muted" />
-            <span>Settings & Privacy</span>
+            <div className="flex items-center gap-3">
+              <Settings className={cn("w-4 h-4", pathname === "/candidate/settings" ? "text-primary" : "text-text-muted")} />
+              <span>Settings & Privacy</span>
+            </div>
+            {pathname === "/candidate/settings" && (
+              <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full bg-primary" />
+            )}
           </Link>
 
-          <div className="flex items-center justify-between p-2.5 mt-2 rounded-2xl bg-background-alt/60 border border-border/80 shadow-2xs">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <img
-                src={user.avatarUrl}
-                alt={user.name}
-                className="w-8.5 h-8.5 rounded-full object-cover shrink-0 border border-border"
-              />
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-xs font-bold text-text-primary truncate">{user.name}</span>
-                <span className="text-[10px] text-text-muted truncate">{user.email}</span>
+          <div className="flex items-center justify-between p-2.5 mt-2 rounded-2xl bg-background-alt/70 border border-border/80 shadow-2xs">
+            <Link
+              href="/candidate/profile"
+              onClick={() => setMobileSidebarOpen(false)}
+              className="flex items-center gap-2.5 min-w-0 flex-1 group"
+            >
+              {candidateAvatar ? (
+                <img
+                  src={candidateAvatar}
+                  alt={candidateName}
+                  className="w-9 h-9 rounded-full object-cover shrink-0 border border-border"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-[#197B69] text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-2xs group-hover:opacity-90 transition-opacity">
+                  {candidateName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-bold text-text-primary truncate group-hover:text-primary transition-colors">
+                  {candidateName}
+                </span>
+                <span className="text-[11px] text-text-muted truncate">
+                  {candidateEmail}
+                </span>
               </div>
-            </div>
+            </Link>
             <button
-              onClick={() => logout("/")}
+              onClick={() => {
+                resetAll();
+                logout("/");
+              }}
               title="Sign Out"
               type="button"
-              className="p-1.5 text-text-muted hover:text-danger rounded-lg hover:bg-surface transition-colors cursor-pointer"
+              className="p-1.5 text-text-muted hover:text-danger rounded-lg hover:bg-surface transition-colors cursor-pointer shrink-0 ml-1"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
+
         </div>
       </aside>
 
       {/* Main Page Area with Elevated Header Bar */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-y-auto">
         {/* Desktop Top Header Command Bar */}
         <header className="hidden lg:flex h-16 bg-surface/80 backdrop-blur-md border-b border-border/80 px-8 items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3 text-xs text-text-muted">

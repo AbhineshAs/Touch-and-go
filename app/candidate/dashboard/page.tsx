@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Badge, MatchBadge, StatusBadge } from "@/components/ui/Badge";
+import { MatchBadge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
 import { LoadingState } from "@/components/ui/States";
 import {
   Search,
@@ -21,42 +22,41 @@ import {
   Building2,
   Video,
   ChevronRight,
+  Layers,
+  Award,
+  Sliders,
+  ExternalLink,
+  ShieldCheck,
+  RefreshCw,
+  Info,
 } from "lucide-react";
-import { CandidateProfile, Job, Application, Interview } from "@/types";
-import { getCandidateProfile } from "@/lib/api/candidate";
-import { getRecommendedJobs } from "@/lib/api/jobs";
-import { getApplications } from "@/lib/api/applications";
-import { getInterviews } from "@/lib/api/interviews";
+import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { formatSalaryRange, formatRelativeTime, formatDate } from "@/lib/utils";
 
 export default function CandidateDashboardPage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<CandidateProfile | null>(null);
-  const [recommendedJobs, setRecommendedJobs] = useState<Job[]>([]);
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    candidateRecord,
+    completeness,
+    suggestions,
+    matchedJobs,
+    savedJobIds,
+    applications,
+    interviews,
+    recommendations,
+    resumeDraft,
+    toggleSaveJob,
+    applyToJob,
+  } = useCandidate();
 
   const [searchKeyword, setSearchKeyword] = useState("");
   const [searchLocation, setSearchLocation] = useState("");
+  const [isMissingDetailsOpen, setIsMissingDetailsOpen] = useState(false);
 
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      const [p, jobs, apps, ints] = await Promise.all([
-        getCandidateProfile(),
-        getRecommendedJobs(),
-        getApplications("prof_cand_01"),
-        getInterviews(),
-      ]);
-      setProfile(p);
-      setRecommendedJobs(jobs.slice(0, 3));
-      setApplications(apps);
-      setInterviews(ints.filter((i) => i.status === "Scheduled"));
-      setIsLoading(false);
-    }
-    loadData();
-  }, []);
+  // Apply Simulation Modal State
+  const [applyingJobId, setApplyingJobId] = useState<string | null>(null);
+  const [applyNotes, setApplyNotes] = useState("");
+  const [isAppliedSuccess, setIsAppliedSuccess] = useState(false);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,29 +66,98 @@ export default function CandidateDashboardPage() {
     router.push(`/candidate/jobs?${params.toString()}`);
   };
 
-  if (isLoading || !profile) {
-    return <LoadingState message="Loading your candidate dashboard..." />;
+  // If candidate record not loaded yet, or fresh without onboarding
+  if (!candidateRecord) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-primary-soft text-primary flex items-center justify-center font-black text-xl">
+          T
+        </div>
+        <h2 className="text-xl font-bold text-text-primary">No Active Candidate Profile</h2>
+        <p className="text-xs sm:text-sm text-text-muted max-w-md">
+          Start your personalized candidate journey by completing our quick career conversation.
+        </p>
+        <Link href="/onboarding">
+          <Button size="md" variant="primary">
+            Start Profile Discovery
+          </Button>
+        </Link>
+      </div>
+    );
   }
+
+  const { identity, profile, discovery, profileRevision } = candidateRecord;
+  const fullName = identity?.fullName || "Candidate";
+  const firstName = fullName.split(" ")[0] || "Candidate";
+  const headline = profile?.headline || "Technology Candidate";
+
+  // Career Guidance next action from discovery engine
+  const nextGuidance = recommendations[0];
+
+  // Resume status: Create vs Continue vs Review Updates
+  const hasResumeDraft = Boolean(resumeDraft);
+  const hasPendingResumeUpdates =
+    hasResumeDraft &&
+    resumeDraft?.sourceProfileRevision !== undefined &&
+    profileRevision > resumeDraft.sourceProfileRevision &&
+    !resumeDraft.hasReviewedProfileChanges;
+
+  const topJobs = matchedJobs.slice(0, 3);
+  const activeInterviews = interviews.filter((i) => i.status === "Scheduled");
+
+  const handleConfirmApply = () => {
+    if (!applyingJobId) return;
+    applyToJob(applyingJobId, applyNotes);
+    setIsAppliedSuccess(true);
+    setTimeout(() => {
+      setIsAppliedSuccess(false);
+      setApplyingJobId(null);
+      setApplyNotes("");
+    }, 1500);
+  };
 
   return (
     <div className="flex flex-col gap-8">
-      {/* 1. Greeting & Profile Completeness Banner */}
+      {/* 1. Greeting & Candidate Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-border">
         <div className="flex flex-col gap-1">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-text-primary">
-            Welcome back, {profile.fullName.split(" ")[0]}
-          </h1>
-          <p className="text-xs sm:text-sm text-text-secondary">
-            {profile.headline}
-          </p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-text-primary">
+              Welcome back, {firstName}
+            </h1>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-soft text-primary font-bold uppercase tracking-wider">
+              Revision {profileRevision}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-text-secondary">{headline}</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/candidate/profile/resume">
-            <Button size="sm" variant="outline">
-              Update Resume
-            </Button>
-          </Link>
+          {hasPendingResumeUpdates ? (
+            <Link href="/candidate/profile/resume">
+              <Button
+                size="sm"
+                variant="primary"
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+                leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+              >
+                Review Profile Updates
+              </Button>
+            </Link>
+          ) : hasResumeDraft ? (
+            <Link href="/candidate/profile/resume">
+              <Button size="sm" variant="outline" leftIcon={<FileText className="w-3.5 h-3.5" />}>
+                Continue Resume
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/candidate/profile/resume">
+              <Button size="sm" variant="outline" leftIcon={<FileText className="w-3.5 h-3.5" />}>
+                Create Resume
+              </Button>
+            </Link>
+          )}
+
           <Link href="/candidate/profile">
             <Button size="sm" variant="primary">
               View Profile
@@ -97,9 +166,9 @@ export default function CandidateDashboardPage() {
         </div>
       </div>
 
-      {/* 2. Top Two-Column Widgets: Profile Completeness + Upcoming Interview */}
+      {/* 2. Top Widgets: Profile Completeness + Career Guidance / Upcoming Interview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Completion Widget */}
+        {/* Profile Completion Widget (Computed via 6-group transparent formula) */}
         <Card className="lg:col-span-2 p-6 flex flex-col justify-between gap-5 bg-surface border-border">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -113,8 +182,8 @@ export default function CandidateDashboardPage() {
                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   />
                   <path
-                    className="text-primary"
-                    strokeDasharray={`${profile.completionPercentage}, 100`}
+                    className="text-primary transition-all duration-500"
+                    strokeDasharray={`${completeness.score}, 100`}
                     strokeWidth="3.5"
                     strokeLinecap="round"
                     stroke="currentColor"
@@ -123,77 +192,108 @@ export default function CandidateDashboardPage() {
                   />
                 </svg>
                 <span className="absolute font-black text-sm text-text-primary">
-                  {profile.completionPercentage}%
+                  {completeness.score}%
                 </span>
               </div>
 
               <div className="flex flex-col">
-                <h3 className="text-base font-bold text-text-primary">Profile Completeness</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-text-primary">Profile Completeness</h3>
+                  <span className="text-[11px] font-semibold text-text-muted">
+                    ({completeness.completedGroups.length}/6 groups complete)
+                  </span>
+                </div>
                 <p className="text-xs text-text-muted">
-                  Structured profiles with verified skills receive 3.2x higher recruiter response.
+                  Structured profiles with verified skills receive clearer matches and faster employer criteria evaluation.
                 </p>
               </div>
             </div>
 
-            <Link href="/candidate/profile">
-              <Button size="sm" variant="soft">
-                Complete Profile
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsMissingDetailsOpen(true)}
+                className="text-xs text-primary font-semibold hover:underline cursor-pointer"
+              >
+                See missing details
+              </button>
+              <Link href="/candidate/profile">
+                <Button size="sm" variant="soft">
+                  Complete Profile
+                </Button>
+              </Link>
+            </div>
           </div>
 
-          {/* Missing items checklist */}
+          {/* Profile Improvement Suggestions (at most 3 contextual additions) */}
           <div className="pt-4 border-t border-border-subtle flex flex-col gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              Recommended additions for higher criteria match:
+              Recommended profile additions:
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {profile.missingItems.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="p-2.5 rounded-lg bg-background border border-border-subtle flex items-center gap-2 text-xs text-text-secondary"
-                >
-                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                  <span className="truncate">{item}</span>
-                </div>
-              ))}
-            </div>
+            {suggestions.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {suggestions.map((sug) => (
+                  <Link
+                    key={sug.id}
+                    href={sug.targetHref}
+                    className="p-2.5 rounded-lg bg-background border border-border-subtle hover:border-primary/40 transition-colors flex flex-col gap-1 text-xs"
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-text-primary">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span className="truncate">{sug.title}</span>
+                    </div>
+                    <span className="text-[11px] text-text-muted line-clamp-2">
+                      {sug.description}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="p-3 rounded-lg bg-success-soft/30 border border-success/20 text-xs text-success flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>All essential profile detail groups are fulfilled. Your profile is in excellent shape!</span>
+              </div>
+            )}
           </div>
         </Card>
 
-        {/* Upcoming Interview Widget */}
+        {/* Upcoming Interview or Career Guidance Hero Widget */}
         <Card className="p-6 flex flex-col justify-between gap-4 bg-primary-soft/20 border-primary/20">
           <div className="flex items-center justify-between pb-2 border-b border-primary/20">
             <span className="text-xs font-bold uppercase tracking-wider text-primary">
-              Upcoming Interview
+              {activeInterviews.length > 0 ? "Upcoming Interview" : "Career Guidance"}
             </span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            {activeInterviews.length > 0 ? (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            ) : (
+              <Sparkles className="w-4 h-4 text-primary" />
+            )}
           </div>
 
-          {interviews.length > 0 ? (
+          {activeInterviews.length > 0 ? (
             <div className="flex flex-col gap-3">
               <div>
                 <h4 className="font-bold text-sm text-text-primary leading-snug">
-                  {interviews[0].jobTitle}
+                  {activeInterviews[0].jobTitle}
                 </h4>
                 <p className="text-xs text-text-secondary mt-0.5 font-medium">
-                  With {interviews[0].interviewerName} ({interviews[0].interviewerRole})
+                  With {activeInterviews[0].interviewerName} ({activeInterviews[0].interviewerRole})
                 </p>
               </div>
 
               <div className="p-3 rounded-lg bg-surface border border-border-subtle flex flex-col gap-1.5 text-xs">
                 <div className="flex items-center gap-2 text-text-primary font-semibold">
                   <Calendar className="w-4 h-4 text-primary" />
-                  <span>Thursday, 17 Sep 2026 · 03:00 PM IST</span>
+                  <span>{formatDate(activeInterviews[0].scheduledAt)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-text-muted">
                   <Clock className="w-4 h-4" />
-                  <span>{interviews[0].durationMinutes} Minutes · Google Meet</span>
+                  <span>{activeInterviews[0].durationMinutes} Minutes · Video Call</span>
                 </div>
               </div>
 
               <a
-                href={interviews[0].meetingLink}
+                href={activeInterviews[0].meetingLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full"
@@ -203,9 +303,36 @@ export default function CandidateDashboardPage() {
                 </Button>
               </a>
             </div>
+          ) : nextGuidance ? (
+            <div className="flex flex-col justify-between gap-3 h-full">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] font-bold text-primary uppercase tracking-wider">
+                  Targeted for {discovery.primaryChallenge ? discovery.primaryChallenge.replace(/_/g, " ") : "your goals"}
+                </span>
+                <h4 className="font-bold text-sm text-text-primary leading-snug">
+                  {nextGuidance.title}
+                </h4>
+                <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed">
+                  {nextGuidance.benefit}
+                </p>
+              </div>
+
+              <div className="pt-2 border-t border-primary/20 flex items-center justify-between">
+                <span className="text-[11px] text-text-muted flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>~{nextGuidance.estimatedDurationMinutes}m</span>
+                </span>
+                <Link href={`/dashboard/activities/${nextGuidance.activityId}`}>
+                  <Button size="sm" variant="primary" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                    Start Activity
+                  </Button>
+                </Link>
+              </div>
+            </div>
           ) : (
-            <div className="py-6 text-center text-xs text-text-muted">
-              No interviews scheduled at this time.
+            <div className="py-6 text-center text-xs text-text-muted flex flex-col items-center gap-2">
+              <Info className="w-5 h-5 text-text-muted" />
+              <span>No interviews scheduled at this time.</span>
             </div>
           )}
         </Card>
@@ -215,7 +342,7 @@ export default function CandidateDashboardPage() {
       <Card className="p-6 bg-surface border-border shadow-xs flex flex-col gap-4">
         <div className="flex items-center gap-2">
           <Search className="w-4 h-4 text-primary" />
-          <h3 className="text-sm font-bold text-text-primary">Discover Verified Technology Roles</h3>
+          <h3 className="text-sm font-bold text-text-primary">Discover Sample Technology Roles</h3>
         </div>
 
         <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -234,7 +361,7 @@ export default function CandidateDashboardPage() {
             <MapPin className="w-4 h-4 text-text-muted shrink-0" />
             <input
               type="text"
-              placeholder="Bengaluru, Kochi, Remote..."
+              placeholder="Bengaluru, Remote, Hybrid..."
               value={searchLocation}
               onChange={(e) => setSearchLocation(e.target.value)}
               className="w-full bg-transparent text-xs text-text-primary focus:outline-none"
@@ -248,7 +375,7 @@ export default function CandidateDashboardPage() {
 
         <div className="flex items-center gap-2 flex-wrap text-xs text-text-muted pt-1">
           <span>Quick filters:</span>
-          {["React 19", "Remote Jobs", "Bengaluru Hybrid", "FastAPI Python"].map((tag) => (
+          {["React", "Remote", "Bengaluru", "Python", "Full-time"].map((tag) => (
             <button
               key={tag}
               type="button"
@@ -261,14 +388,16 @@ export default function CandidateDashboardPage() {
         </div>
       </Card>
 
-      {/* 4. Two-Column Split: High Match Opportunities + Active Applications */}
+      {/* 4. Two-Column Split: Profile-Matched Sample Opportunities + Applications */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Recommended Opportunities */}
+        {/* Recommended Sample Opportunities */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
-              <h2 className="text-base font-bold text-text-primary">Recommended Opportunities</h2>
+              <h2 className="text-base font-bold text-text-primary">
+                Recommended Sample Opportunities
+              </h2>
             </div>
             <Link
               href="/candidate/recommended"
@@ -280,94 +409,295 @@ export default function CandidateDashboardPage() {
           </div>
 
           <div className="flex flex-col gap-3">
-            {recommendedJobs.map((job) => (
-              <Card key={job.id} hoverable className="p-4 sm:p-5 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={job.organizationLogo}
-                      alt={job.organizationName}
-                      className="w-10 h-10 rounded-xl object-cover border border-border shrink-0"
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium text-text-muted">
-                        {job.organizationName}
-                      </span>
-                      <Link href={`/jobs/${job.slug}`}>
-                        <h4 className="font-bold text-sm text-text-primary hover:text-primary transition-colors">
-                          {job.title}
-                        </h4>
-                      </Link>
-                    </div>
-                  </div>
-                  {job.matchScore && <MatchBadge score={job.matchScore} size="sm" />}
-                </div>
+            {topJobs.length > 0 ? (
+              topJobs.map(({ job, matchReasons, unconfirmedSkills }) => {
+                const isSaved = savedJobIds.includes(job.id);
+                const hasApplied = applications.some((a) => a.jobId === job.id);
 
-                <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
-                  <span className="font-semibold text-text-primary">
-                    {formatSalaryRange(job.minSalaryINR, job.maxSalaryINR, job.salaryPeriod)}
-                  </span>
-                  <Link href={`/jobs/${job.slug}`}>
+                return (
+                  <Card key={job.id} hoverable className="p-4 sm:p-5 flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={job.organizationLogo}
+                          alt={job.organizationName}
+                          className="w-10 h-10 rounded-xl object-cover border border-border shrink-0"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-text-muted">
+                            {job.organizationName}
+                          </span>
+                          <Link href={`/jobs/${job.slug}`}>
+                            <h4 className="font-bold text-sm text-text-primary hover:text-primary transition-colors">
+                              {job.title}
+                            </h4>
+                          </Link>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleSaveJob(job.id)}
+                          className="p-1.5 rounded-lg border border-border text-text-muted hover:text-primary transition-colors cursor-pointer"
+                          title={isSaved ? "Saved" : "Save Job"}
+                        >
+                          <Bookmark className={`w-4 h-4 ${isSaved ? "fill-primary text-primary" : ""}`} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Factual Match Reasons */}
+                    <div className="flex flex-wrap gap-1.5 text-[11px]">
+                      {matchReasons.map((reason, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-0.5 rounded bg-primary-soft/40 text-primary-dark font-medium"
+                        >
+                          ✓ {reason}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Unconfirmed Skills if any */}
+                    {unconfirmedSkills.length > 0 && (
+                      <div className="text-[11px] text-text-muted">
+                        <span>Skills not yet confirmed: </span>
+                        <span className="text-text-secondary">
+                          {unconfirmedSkills.slice(0, 3).join(", ")}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border-subtle text-xs">
+                      <span className="font-semibold text-text-primary">
+                        {formatSalaryRange(job.minSalaryINR, job.maxSalaryINR, job.salaryPeriod)}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/jobs/${job.slug}`}>
+                          <Button size="sm" variant="outline">
+                            Details
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="primary"
+                          disabled={hasApplied}
+                          onClick={() => setApplyingJobId(job.id)}
+                        >
+                          {hasApplied ? "Applied" : "Simulate Apply"}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+            ) : (
+              <div className="p-6 rounded-2xl bg-surface border border-border text-center flex flex-col items-center gap-3">
+                <Info className="w-8 h-8 text-text-muted" />
+                <h3 className="text-sm font-bold text-text-primary">No Matching Sample Roles</h3>
+                <p className="text-xs text-text-muted max-w-sm">
+                  We could not find sample positions strictly matching your stated filters.
+                </p>
+                <div className="flex items-center gap-3 pt-2">
+                  <Link href="/candidate/profile">
                     <Button size="sm" variant="outline">
-                      Review Match
+                      Edit Preferences
+                    </Button>
+                  </Link>
+                  <Link href="/candidate/jobs">
+                    <Button size="sm" variant="primary">
+                      Browse All Sample Jobs
                     </Button>
                   </Link>
                 </div>
-              </Card>
-            ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Active Application Activity */}
+        {/* Application Activity */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
-              <h2 className="text-base font-bold text-text-primary">Application Activity</h2>
+              <h2 className="text-base font-bold text-text-primary">
+                Application Activity ({applications.length})
+              </h2>
             </div>
             <Link
               href="/candidate/applications"
               className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
             >
-              <span>View All ({applications.length})</span>
+              <span>View All</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           <div className="flex flex-col gap-3">
-            {applications.map((app) => (
-              <Card key={app.id} hoverable className="p-4 sm:p-5 flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium text-text-muted">{app.organizationName}</span>
-                    <Link href={`/candidate/applications/${app.id}`}>
-                      <h4 className="font-bold text-sm text-text-primary hover:text-primary transition-colors">
+            {applications.length > 0 ? (
+              applications.map((app) => (
+                <Card key={app.id} hoverable className="p-4 sm:p-5 flex flex-col gap-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium text-text-muted">
+                        {app.organizationName}
+                      </span>
+                      <h4 className="font-bold text-sm text-text-primary leading-snug">
                         {app.jobTitle}
                       </h4>
-                    </Link>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-primary-soft text-primary-dark text-xs font-semibold">
+                      {app.stage}
+                    </span>
                   </div>
-                  <StatusBadge status={app.stage} />
-                </div>
 
-                <div className="p-2.5 rounded-lg bg-background border border-border-subtle flex items-center justify-between text-xs text-text-secondary">
-                  <span>
-                    Current Stage: <strong className="text-text-primary">{app.stage}</strong>
-                  </span>
-                  <span className="text-text-muted">Applied {formatDate(app.appliedAt)}</span>
-                </div>
-
-                <div className="flex justify-end pt-1">
-                  <Link href={`/candidate/applications/${app.id}`}>
-                    <Button size="sm" variant="secondary" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                      View Timeline
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
+                  <div className="p-2.5 rounded-lg bg-background border border-border-subtle flex items-center justify-between text-xs text-text-secondary">
+                    <span>
+                      Status: <strong className="text-text-primary">{app.stage}</strong>
+                    </span>
+                    <span className="text-text-muted">Applied {formatDate(app.appliedAt)}</span>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <div className="p-8 rounded-2xl bg-surface border border-border text-center flex flex-col items-center gap-3">
+                <FileText className="w-8 h-8 text-text-muted" />
+                <h4 className="text-sm font-bold text-text-primary">No active applications</h4>
+                <p className="text-xs text-text-muted max-w-sm">
+                  You haven&apos;t submitted any simulated applications yet. Browse recommended sample roles to test the process.
+                </p>
+                <Link href="/candidate/jobs" className="pt-2">
+                  <Button size="sm" variant="outline">
+                    Explore Sample Jobs
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* MISSING DETAILS MODAL */}
+      <Modal
+        isOpen={isMissingDetailsOpen}
+        onClose={() => setIsMissingDetailsOpen(false)}
+        title="Profile Completeness Breakdown"
+        description="TAG calculates completeness across 6 transparent, equally weighted groups."
+        size="md"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between p-3 rounded-xl bg-background border border-border">
+            <span className="font-bold text-sm text-text-primary">Overall Completeness</span>
+            <span className="font-black text-lg text-primary">{completeness.score}%</span>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
+              Detail Groups Status
+            </span>
+            {[
+              { id: "contact", label: "Contact Information (Name, Email, Phone)" },
+              { id: "direction", label: "Career Direction (Target Role or Descriptive Headline)" },
+              { id: "skills", label: "Technical Skills (At least 1 listed skill)" },
+              { id: "background_evidence", label: "Background Evidence (Education, Experience, or Project)" },
+              { id: "work_preferences", label: "Work Preferences (Work Mode, Job Type, Availability)" },
+              { id: "summary", label: "Professional Summary (Confirmed narrative)" },
+            ].map(({ id, label }) => {
+              const isDone = completeness.completedGroups.includes(id as any);
+              return (
+                <div
+                  key={id}
+                  className="p-2.5 rounded-lg border border-border-subtle flex items-center justify-between text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    {isDone ? (
+                      <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                    )}
+                    <span className={isDone ? "text-text-primary font-medium" : "text-text-secondary"}>
+                      {label}
+                    </span>
+                  </div>
+                  <span className={`font-bold text-[11px] ${isDone ? "text-success" : "text-amber-600"}`}>
+                    {isDone ? "Complete" : "Missing"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex justify-end pt-3 border-t border-border">
+            <Link href="/candidate/profile" onClick={() => setIsMissingDetailsOpen(false)}>
+              <Button size="sm" variant="primary">
+                Edit Profile Information
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Modal>
+
+      {/* SIMULATED APPLY CONFIRMATION MODAL */}
+      <Modal
+        isOpen={Boolean(applyingJobId)}
+        onClose={() => setApplyingJobId(null)}
+        title="Simulate Job Application"
+        description="Test how applications appear in your candidate workspace."
+        size="md"
+      >
+        <div className="flex flex-col gap-4">
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 flex items-start gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="flex flex-col gap-0.5">
+              <span className="font-bold">Not sent to employer (Simulation)</span>
+              <span>
+                This is a local simulation. No email or application data is transmitted externally.
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-text-primary">
+              Candidate Cover Note (Optional)
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Briefly highlight why your verified skills match this role..."
+              value={applyNotes}
+              onChange={(e) => setApplyNotes(e.target.value)}
+              className="p-3 rounded-xl border border-border bg-background text-xs text-text-primary focus:outline-none focus:border-primary"
+            />
+          </div>
+
+          {isAppliedSuccess && (
+            <div className="p-3 rounded-xl bg-success text-white text-xs font-bold flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Simulated application submitted successfully!</span>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setApplyingJobId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={isAppliedSuccess}
+              onClick={handleConfirmApply}
+            >
+              Confirm Simulated Submission
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

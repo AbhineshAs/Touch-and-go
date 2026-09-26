@@ -1,35 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { MatchBadge, SkillBadge } from "@/components/ui/Badge";
-import { LoadingState, EmptyState } from "@/components/ui/States";
-import { Job } from "@/types";
-import { getJobs } from "@/lib/api/jobs";
-import { getSavedJobIds, toggleSaveJob } from "@/lib/api/candidate";
-import { formatSalaryRange, formatRelativeTime } from "@/lib/utils";
-import { Bookmark, MapPin, Trash2, ArrowRight } from "lucide-react";
+import { EmptyState } from "@/components/ui/States";
+import { SAMPLE_JOBS_CATALOGUE } from "@/lib/candidate/jobs/matcher";
+import { formatSalaryRange } from "@/lib/utils";
+import { Bookmark, Trash2, ArrowRight } from "lucide-react";
+import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 
 export default function SavedJobsPage() {
-  const [savedJobs, setSavedJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { savedJobIds, toggleSaveJob } = useCandidate();
 
-  useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      const [allJobs, savedIds] = await Promise.all([getJobs(), getSavedJobIds()]);
-      setSavedJobs(allJobs.filter((j) => savedIds.includes(j.id)));
-      setIsLoading(false);
-    }
-    load();
-  }, []);
-
-  const handleRemoveSaved = async (jobId: string) => {
-    setSavedJobs((prev) => prev.filter((j) => j.id !== jobId));
-    await toggleSaveJob(jobId);
-  };
+  const savedJobs = useMemo(() => {
+    return SAMPLE_JOBS_CATALOGUE.filter((j) => savedJobIds.includes(j.id));
+  }, [savedJobIds]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,17 +24,15 @@ export default function SavedJobsPage() {
           Saved Opportunities ({savedJobs.length})
         </h1>
         <p className="text-xs sm:text-sm text-text-secondary">
-          Jobs you have bookmarked to review or apply to later.
+          Sample jobs you have bookmarked to review or explore further.
         </p>
       </div>
 
-      {isLoading ? (
-        <LoadingState message="Loading your saved jobs..." />
-      ) : savedJobs.length === 0 ? (
+      {savedJobs.length === 0 ? (
         <EmptyState
           icon={<Bookmark className="w-8 h-8 text-text-muted" />}
           title="No saved jobs yet"
-          description="Click the bookmark icon on any job card to save it here for later review."
+          description="Click the bookmark icon on any sample job card to save it here for later review."
           action={{
             label: "Explore Jobs",
             onClick: () => (window.location.href = "/candidate/jobs"),
@@ -79,7 +63,8 @@ export default function SavedJobsPage() {
                   </div>
 
                   <button
-                    onClick={() => handleRemoveSaved(job.id)}
+                    type="button"
+                    onClick={() => toggleSaveJob(job.id)}
                     className="p-1.5 rounded-lg text-text-muted hover:text-danger hover:bg-background transition-colors cursor-pointer"
                     title="Remove from saved"
                   >
@@ -93,18 +78,18 @@ export default function SavedJobsPage() {
                   </span>
                   <span>•</span>
                   <span>{job.location}</span>
+                  <span>•</span>
+                  <span className="px-2 py-0.5 rounded bg-border-subtle text-[11px] font-medium">
+                    {job.workMode}
+                  </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-border-subtle text-xs">
-                {job.matchScore ? (
-                  <MatchBadge score={job.matchScore} size="sm" />
-                ) : (
-                  <span />
-                )}
+                <span className="text-text-muted">{job.experienceLevel}</span>
                 <Link href={`/jobs/${job.slug}`}>
                   <Button size="sm" variant="primary" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                    View & Apply
+                    View Details
                   </Button>
                 </Link>
               </div>

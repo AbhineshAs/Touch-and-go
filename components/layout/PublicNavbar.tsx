@@ -34,7 +34,7 @@ export function PublicNavbar() {
   const getPortalLabel = () => {
     if (!user) return "My Workspace";
     if (user.role === "candidate") return "Candidate Portal";
-    if (user.role === "employer") return "Recruiter Portal";
+    if (user.role === "employer") return "Company Portal";
     return "Admin Console";
   };
 
@@ -42,7 +42,7 @@ export function PublicNavbar() {
     { label: "Find Jobs", href: "/jobs" },
     { label: "Companies", href: "/companies/razorwave-technologies" },
     {
-      label: "For Employers",
+      label: "For Companies",
       href: isAuthenticated
         ? user?.role === "employer"
           ? "/employer/dashboard"

@@ -5,6 +5,16 @@ export const AUTH_TOKEN_KEY = "tag_auth_token";
 export const AUTH_USER_KEY = "tag_auth_user";
 export const AUTH_ROLE_KEY = "tag_active_role";
 
+export function notifyAuthChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent("tag_auth_changed"));
+  try {
+    window.dispatchEvent(new StorageEvent("storage", { key: AUTH_TOKEN_KEY }));
+  } catch {
+    window.dispatchEvent(new Event("storage"));
+  }
+}
+
 export function getStoredToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(AUTH_TOKEN_KEY);
@@ -33,6 +43,7 @@ export async function switchActiveRole(role: UserRole): Promise<User> {
     localStorage.setItem(AUTH_ROLE_KEY, role);
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
     document.cookie = `${AUTH_ROLE_KEY}=${role}; path=/; max-age=604800; SameSite=Lax`;
+    notifyAuthChange();
   }
   return user;
 }
@@ -61,6 +72,7 @@ export async function signIn(
     localStorage.setItem(AUTH_ROLE_KEY, role);
     document.cookie = `${AUTH_TOKEN_KEY}=${token}; path=/; max-age=604800; SameSite=Lax`;
     document.cookie = `${AUTH_ROLE_KEY}=${role}; path=/; max-age=604800; SameSite=Lax`;
+    notifyAuthChange();
   }
 
   return { user, token };
@@ -91,6 +103,7 @@ export async function signUp(data: {
     localStorage.setItem(AUTH_ROLE_KEY, data.role);
     document.cookie = `${AUTH_TOKEN_KEY}=${token}; path=/; max-age=604800; SameSite=Lax`;
     document.cookie = `${AUTH_ROLE_KEY}=${data.role}; path=/; max-age=604800; SameSite=Lax`;
+    notifyAuthChange();
   }
 
   return { user, token };
@@ -104,5 +117,6 @@ export async function signOut(): Promise<void> {
     localStorage.removeItem(AUTH_ROLE_KEY);
     document.cookie = `${AUTH_TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
     document.cookie = `${AUTH_ROLE_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    notifyAuthChange();
   }
 }
