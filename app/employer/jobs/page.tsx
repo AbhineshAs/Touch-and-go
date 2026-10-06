@@ -86,7 +86,7 @@ export default function EmployerJobsPage() {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto max-w-full overflow-x-auto scrollbar-none">
           {["All", "Published", "Draft", "Paused"].map((st) => (
             <button
               key={st}

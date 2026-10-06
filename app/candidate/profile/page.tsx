@@ -670,7 +670,7 @@ export default function CandidateProfilePage() {
             value={expLocation}
             onChange={(e) => setExpLocation(e.target.value)}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Start Date"
               placeholder="e.g. Jan 2023"
@@ -749,7 +749,7 @@ export default function CandidateProfilePage() {
             value={eduField}
             onChange={(e) => setEduField(e.target.value)}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
               label="Start Year"
               placeholder="e.g. 2022"

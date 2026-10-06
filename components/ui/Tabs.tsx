@@ -27,7 +27,7 @@ export function Tabs({
 }: TabsProps) {
   if (variant === "pills") {
     return (
-      <div className={cn("inline-flex items-center p-1 bg-border-subtle rounded-lg gap-1", className)}>
+      <div className={cn("inline-flex max-w-full overflow-x-auto items-center p-1 bg-border-subtle rounded-lg gap-1 scrollbar-none", className)}>
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab;
           return (

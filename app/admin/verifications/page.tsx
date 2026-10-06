@@ -141,7 +141,7 @@ export default function AdminVerificationsPage() {
         {selectedOrg && (
           <div className="flex flex-col gap-5 text-xs">
             {/* Legal records */}
-            <div className="grid grid-cols-2 gap-3 p-4 rounded-xl bg-background border border-border-subtle">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-xl bg-background border border-border-subtle">
               <div>
                 <span className="text-text-muted block text-[11px]">Registered Entity</span>
                 <strong className="text-text-primary">{selectedOrg.verification.registeredEntityName}</strong>

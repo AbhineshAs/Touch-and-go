@@ -6,15 +6,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Checkbox } from "@/components/ui/Select";
 import { LoadingState } from "@/components/ui/States";
-import { User, Building2, ArrowRight, ShieldAlert, Lock, CheckCircle2 } from "lucide-react";
+import { User, Building2, ArrowRight, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { mockOtpService } from "@/lib/candidate/services/otpService";
+import { TagLogo } from "@/components/ui/TagLogo";
 
 type AuthMode = "signup" | "login";
 type AuthRole = "candidate" | "employer";
@@ -29,7 +29,6 @@ const COUNTRY_CODES = [
   { code: "+61", label: "Australia (+61)", flag: "🇦🇺" },
 ];
 
-// Candidate sign up schema
 const candidateSignUpSchema = z.object({
   fullName: z
     .string()
@@ -54,7 +53,6 @@ const candidateSignUpSchema = z.object({
 
 type CandidateSignUpFormValues = z.infer<typeof candidateSignUpSchema>;
 
-// Employer sign up schema
 const employerSignUpSchema = z.object({
   fullName: z.string().trim().min(2, "Full name must be at least 2 characters"),
   email: z.string().trim().email("Please enter a valid work email address"),
@@ -70,7 +68,6 @@ const employerSignUpSchema = z.object({
 
 type EmployerSignUpFormValues = z.infer<typeof employerSignUpSchema>;
 
-// Employer login schema
 const employerLoginSchema = z.object({
   email: z.string().trim().email("Please enter a valid work email address"),
   password: z.string().min(1, "Please enter your password"),
@@ -95,13 +92,11 @@ function AuthContent() {
   const [pendingRoleSwitch, setPendingRoleSwitch] = useState<AuthRole | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Candidate login OTP state
   const [candidateLoginPhone, setCandidateLoginPhone] = useState("");
   const [candidateLoginOtp, setCandidateLoginOtp] = useState("");
   const [candidateOtpSent, setCandidateOtpSent] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
-  // Sync mode with query params if changed externally
   useEffect(() => {
     const queryMode = searchParams.get("mode");
     if (queryMode === "login" || queryMode === "signup") {
@@ -109,7 +104,6 @@ function AuthContent() {
     }
   }, [searchParams]);
 
-  // Candidate Sign Up Form
   const candidateSignUpForm = useForm<CandidateSignUpFormValues>({
     resolver: zodResolver(candidateSignUpSchema),
     defaultValues: {
@@ -121,7 +115,6 @@ function AuthContent() {
     },
   });
 
-  // Employer Sign Up Form
   const employerSignUpForm = useForm<EmployerSignUpFormValues>({
     resolver: zodResolver(employerSignUpSchema),
     defaultValues: {
@@ -132,7 +125,6 @@ function AuthContent() {
     },
   });
 
-  // Employer Log In Form
   const employerLoginForm = useForm<EmployerLoginFormValues>({
     resolver: zodResolver(employerLoginSchema),
     defaultValues: {
@@ -145,7 +137,6 @@ function AuthContent() {
     if (targetRole === selectedRole) return;
     setAuthError(null);
 
-    // If switching away from candidate in signup mode and candidate has entered text, warn before discarding
     if (activeTab === "signup" && selectedRole === "candidate" && targetRole === "employer") {
       const vals = candidateSignUpForm.getValues();
       if (vals.fullName || vals.email || vals.phone) {
@@ -177,7 +168,6 @@ function AuthContent() {
     setCandidateOtpSent(false);
   };
 
-  // Submission Handlers
   const onCandidateSignUpSubmit = (data: CandidateSignUpFormValues) => {
     setIdentity({
       fullName: data.fullName,
@@ -222,15 +212,13 @@ function AuthContent() {
     setAuthError(null);
 
     try {
-      const res = loginCandidateByPhone(candidateLoginPhone);
+      loginCandidateByPhone(candidateLoginPhone);
       await login(`cand_${candidateLoginPhone.slice(-10)}@tagjobs.in`, "candidate");
 
       if (redirect) {
         router.push(redirect);
-      } else if (res.onboardingComplete) {
-        router.push("/candidate/dashboard");
       } else {
-        router.push("/onboarding");
+        router.push("/candidate/dashboard");
       }
     } catch (err: any) {
       setAuthError(err.message || "Failed to verify phone OTP.");
@@ -254,25 +242,20 @@ function AuthContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-background px-4 py-12">
+    <div className="min-h-screen flex flex-col justify-center items-center bg-[#F8FAFC] px-4 py-12 text-slate-900 font-sans">
       <div className="w-full max-w-md flex flex-col gap-6">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center gap-2">
-          <Link href="/sign-up" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-xl shadow-xs group-hover:scale-105 transition-transform">
-              T
-            </div>
-            <span className="font-bold text-2xl text-text-primary">TAG</span>
-          </Link>
-          <h1 className="text-xl font-bold tracking-tight text-text-primary mt-2">
+          <TagLogo height={46} />
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 mt-2">
             {activeTab === "signup"
-              ? `Create your ${selectedRole === "candidate" ? "Candidate" : "Company"} Account`
-              : `Sign In as ${selectedRole === "candidate" ? "Candidate" : "Company"}`}
+              ? `Make the most of your ${selectedRole === "candidate" ? "career" : "hiring"}`
+              : `Welcome back to Touch And Go`}
           </h1>
-          <p className="text-xs text-text-muted">
+          <p className="text-xs text-slate-600 font-medium">
             {activeTab === "signup"
               ? selectedRole === "candidate"
-                ? "Start your career discovery and personalize your dashboard"
+                ? "Join 50,000+ candidates discovering 1-touch matched opportunities"
                 : "Verify your corporate domain and access structured tech talent"
               : selectedRole === "candidate"
                 ? "Sign in with your registered phone number (passwordless OTP)"
@@ -282,26 +265,26 @@ function AuthContent() {
 
         {/* Role Switch Warning Alert */}
         {showRoleSwitchWarning && (
-          <div className="p-4 rounded-xl bg-warning-soft border border-warning/30 flex flex-col gap-2.5 text-xs text-text-primary">
-            <div className="flex items-center gap-2 text-warning font-bold">
+          <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col gap-2.5 text-xs text-slate-900 shadow-2xs">
+            <div className="flex items-center gap-2 text-amber-800 font-bold">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>Switching to Company</span>
             </div>
-            <p className="text-text-secondary">
+            <p className="text-slate-600 font-medium">
               Switching to the Company signup will clear the candidate details you have entered. Would you like to proceed?
             </p>
             <div className="flex items-center gap-2 pt-1">
               <button
                 type="button"
                 onClick={confirmRoleSwitch}
-                className="px-3 py-1.5 rounded-lg bg-warning text-white font-semibold text-xs hover:opacity-90 transition-opacity cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-amber-600 text-white font-bold text-xs cursor-pointer shadow-2xs"
               >
                 Yes, Switch to Company
               </button>
               <button
                 type="button"
                 onClick={cancelRoleSwitch}
-                className="px-3 py-1.5 rounded-lg bg-surface border border-border text-text-primary text-xs hover:bg-background transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-900 font-semibold text-xs hover:bg-slate-50 cursor-pointer"
               >
                 Keep Candidate Form
               </button>
@@ -309,17 +292,17 @@ function AuthContent() {
           </div>
         )}
 
-        <div className="p-6 sm:p-8 rounded-2xl bg-surface border border-border shadow-xs flex flex-col gap-6">
-          {/* Main Auth Mode Switcher: Sign Up vs Log In */}
-          <div className="grid grid-cols-2 p-1 bg-border-subtle rounded-xl gap-1">
+        <div className="p-6 sm:p-8 flex flex-col gap-6 shadow-xl shadow-blue-600/5 bg-white border border-slate-200/90 rounded-3xl">
+          {/* Main Auth Mode Switcher */}
+          <div className="grid grid-cols-2 p-1.5 bg-slate-100/80 rounded-2xl gap-1">
             <button
               type="button"
               onClick={() => switchMode("signup")}
               className={cn(
-                "flex items-center justify-center py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                "flex items-center justify-center py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer",
                 activeTab === "signup"
-                  ? "bg-surface text-primary shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
+                  ? "bg-white text-[#2563EB] shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               )}
             >
               Sign Up
@@ -328,26 +311,26 @@ function AuthContent() {
               type="button"
               onClick={() => switchMode("login")}
               className={cn(
-                "flex items-center justify-center py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                "flex items-center justify-center py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer",
                 activeTab === "login"
-                  ? "bg-surface text-primary shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
+                  ? "bg-white text-[#2563EB] shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               )}
             >
               Log In
             </button>
           </div>
 
-          {/* Sub Role Selector: Job Seeker vs Company */}
-          <div className="grid grid-cols-2 p-1 bg-border-subtle rounded-xl gap-1">
+          {/* Sub Role Selector */}
+          <div className="grid grid-cols-2 p-1.5 bg-slate-100/80 rounded-2xl gap-1">
             <button
               type="button"
               onClick={() => handleRoleChange("candidate")}
               className={cn(
-                "flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                "flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
                 selectedRole === "candidate"
-                  ? "bg-surface text-primary shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
+                  ? "bg-white text-[#2563EB] shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               )}
             >
               <User className="w-3.5 h-3.5" />
@@ -357,10 +340,10 @@ function AuthContent() {
               type="button"
               onClick={() => handleRoleChange("employer")}
               className={cn(
-                "flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                "flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
                 selectedRole === "employer"
-                  ? "bg-surface text-primary shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
+                  ? "bg-white text-[#2563EB] shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900"
               )}
             >
               <Building2 className="w-3.5 h-3.5" />
@@ -369,7 +352,7 @@ function AuthContent() {
           </div>
 
           {authError && (
-            <div className="p-3 rounded-lg bg-danger-soft border border-danger/20 text-xs text-danger font-medium">
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold">
               {authError}
             </div>
           )}
@@ -381,7 +364,7 @@ function AuthContent() {
                 <form onSubmit={candidateSignUpForm.handleSubmit(onCandidateSignUpSubmit)} className="flex flex-col gap-4">
                   <Input
                     label="Full Name"
-                    placeholder="e.g. Ananya Sharma, José, or Li"
+                    placeholder="e.g. Ananya Sharma"
                     error={candidateSignUpForm.formState.errors.fullName?.message}
                     {...candidateSignUpForm.register("fullName")}
                   />
@@ -395,14 +378,13 @@ function AuthContent() {
                     {...candidateSignUpForm.register("email")}
                   />
 
-                  {/* Phone Number with Explicit Country Selector */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-semibold text-text-primary">Phone Number</label>
+                    <label className="text-xs font-extrabold text-slate-900">Phone Number</label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="sm:col-span-1">
                         <select
                           {...candidateSignUpForm.register("countryCode")}
-                          className="w-full h-10 px-2.5 rounded-lg border border-border bg-surface text-xs text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                          className="w-full h-11 px-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#2563EB] cursor-pointer"
                         >
                           {COUNTRY_CODES.map((c) => (
                             <option key={c.code} value={c.code}>
@@ -416,30 +398,27 @@ function AuthContent() {
                           type="tel"
                           placeholder="98765 43210"
                           {...candidateSignUpForm.register("phone")}
-                          className="w-full h-10 px-3 rounded-lg border border-border bg-surface text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                          className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] transition-all"
                         />
                       </div>
                     </div>
                     {candidateSignUpForm.formState.errors.phone && (
-                      <p className="text-xs text-danger font-medium mt-0.5">
+                      <p className="text-xs text-red-600 font-medium mt-0.5">
                         {candidateSignUpForm.formState.errors.phone.message}
                       </p>
                     )}
-                    <span className="text-[11px] text-text-muted">
-                      Used for simulated SMS verification. No actual SMS will be sent.
-                    </span>
                   </div>
 
                   <div className="pt-2">
                     <Checkbox
                       label={
-                        <span className="text-xs text-text-secondary leading-relaxed">
+                        <span className="text-xs text-slate-600 leading-relaxed font-medium">
                           I agree to the{" "}
-                          <Link href="/trust" target="_blank" className="text-primary hover:underline font-medium">
+                          <Link href="/trust" target="_blank" className="text-[#2563EB] hover:underline font-bold">
                             Terms of Service
                           </Link>{" "}
                           and{" "}
-                          <Link href="/trust" target="_blank" className="text-primary hover:underline font-medium">
+                          <Link href="/trust" target="_blank" className="text-[#2563EB] hover:underline font-bold">
                             Privacy Policy
                           </Link>
                         </span>
@@ -450,21 +429,19 @@ function AuthContent() {
                       }
                     />
                     {candidateSignUpForm.formState.errors.agreeToTerms?.message && (
-                      <p className="text-xs text-danger font-medium mt-1">
+                      <p className="text-xs text-red-600 font-medium mt-1">
                         {candidateSignUpForm.formState.errors.agreeToTerms.message}
                       </p>
                     )}
                   </div>
 
-                  <Button
+                  <button
                     type="submit"
-                    size="md"
-                    variant="primary"
-                    className="w-full mt-2"
-                    isLoading={candidateSignUpForm.formState.isSubmitting}
+                    className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer mt-2"
                   >
-                    Continue to Phone Verification
-                  </Button>
+                    <span>Agree &amp; Join</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </form>
               ) : (
                 <form onSubmit={employerSignUpForm.handleSubmit(onEmployerSignUpSubmit)} className="flex flex-col gap-4">
@@ -496,13 +473,13 @@ function AuthContent() {
                   <div className="pt-2">
                     <Checkbox
                       label={
-                        <span className="text-xs text-text-secondary">
+                        <span className="text-xs text-slate-600 font-medium">
                           I agree to the{" "}
-                          <Link href="/trust" className="text-primary hover:underline font-medium">
+                          <Link href="/trust" className="text-[#2563EB] hover:underline font-bold">
                             Terms of Service
                           </Link>{" "}
                           and{" "}
-                          <Link href="/trust" className="text-primary hover:underline font-medium">
+                          <Link href="/trust" className="text-[#2563EB] hover:underline font-bold">
                             Responsible AI Charter
                           </Link>
                         </span>
@@ -513,32 +490,30 @@ function AuthContent() {
                       }
                     />
                     {employerSignUpForm.formState.errors.agreeToTerms?.message && (
-                      <p className="text-xs text-danger font-medium mt-1">
+                      <p className="text-xs text-red-600 font-medium mt-1">
                         {employerSignUpForm.formState.errors.agreeToTerms.message}
                       </p>
                     )}
                   </div>
 
-                  <Button
+                  <button
                     type="submit"
-                    size="md"
-                    variant="primary"
-                    className="w-full mt-2"
-                    isLoading={employerSignUpForm.formState.isSubmitting}
+                    className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer mt-2"
                   >
-                    Create Account & Verify Email
-                  </Button>
+                    <span>Create Account &amp; Verify Email</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </form>
               )}
 
-              <div className="pt-4 border-t border-border text-center text-xs text-text-secondary">
-                Already have an account?{" "}
+              <div className="pt-4 border-t border-slate-200 text-center text-xs text-slate-600 font-medium">
+                Already on TAG?{" "}
                 <button
                   type="button"
                   onClick={() => switchMode("login")}
-                  className="font-semibold text-primary hover:underline cursor-pointer"
+                  className="font-extrabold text-[#2563EB] hover:underline cursor-pointer"
                 >
-                  Sign In
+                  Sign in
                 </button>
               </div>
             </>
@@ -552,9 +527,9 @@ function AuthContent() {
                   {!candidateOtpSent ? (
                     <form onSubmit={handleSendCandidateLoginOtp} className="flex flex-col gap-4">
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-semibold text-text-primary">Phone Number</label>
+                        <label className="text-xs font-extrabold text-slate-900">Phone Number</label>
                         <div className="flex gap-2">
-                          <div className="w-20 px-3 py-2 rounded-xl border border-border bg-background text-xs text-text-muted flex items-center justify-center font-medium">
+                          <div className="w-20 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-700 flex items-center justify-center font-bold">
                             🇮🇳 +91
                           </div>
                           <input
@@ -562,33 +537,31 @@ function AuthContent() {
                             value={candidateLoginPhone}
                             onChange={(e) => setCandidateLoginPhone(e.target.value)}
                             placeholder="98765 43210"
-                            className="flex-1 px-3 py-2 rounded-xl border border-border bg-background text-xs text-text-primary focus:outline-none focus:border-primary"
+                            className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#2563EB]"
                             required
                           />
                         </div>
-                        <span className="text-[11px] text-text-muted">
+                        <span className="text-[11px] text-slate-500 font-medium">
                           Enter the phone number used during registration.
                         </span>
                       </div>
 
-                      <Button
+                      <button
                         type="submit"
-                        size="md"
-                        variant="primary"
-                        className="w-full mt-2"
-                        rightIcon={<ArrowRight className="w-4 h-4" />}
+                        className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer mt-2"
                       >
-                        Send Verification Code
-                      </Button>
+                        <span>Send Verification Code</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
                     </form>
                   ) : (
                     <form onSubmit={handleVerifyCandidateLoginOtp} className="flex flex-col gap-4">
-                      <div className="p-3 rounded-xl bg-primary-soft/40 border border-primary/20 text-xs text-primary-dark flex items-center justify-between">
+                      <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-[#2563EB] flex items-center justify-between font-bold">
                         <span>Code sent to +91 {candidateLoginPhone.slice(-10)}</span>
                         <button
                           type="button"
                           onClick={() => setCandidateOtpSent(false)}
-                          className="font-bold underline text-[11px] cursor-pointer"
+                          className="font-extrabold underline text-[11px] cursor-pointer"
                         >
                           Change
                         </button>
@@ -596,29 +569,27 @@ function AuthContent() {
 
                       <div className="flex flex-col gap-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="text-xs font-semibold text-text-primary">6-Digit OTP</label>
-                          <span className="text-[11px] font-mono text-primary">Demo code: 729410</span>
+                          <label className="text-xs font-extrabold text-slate-900">6-Digit OTP</label>
+                          <span className="text-[11px] font-mono font-bold text-[#2563EB]">Demo code: 729410</span>
                         </div>
                         <input
                           type="text"
                           maxLength={6}
                           value={candidateLoginOtp}
                           onChange={(e) => setCandidateLoginOtp(e.target.value)}
-                          className="text-center font-mono text-lg tracking-widest px-3 py-2 rounded-xl border border-border bg-background text-text-primary focus:outline-none focus:border-primary"
+                          className="text-center font-mono font-bold text-lg tracking-widest px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 focus:outline-none focus:border-[#2563EB]"
                           placeholder="••••••"
                           required
                         />
                       </div>
 
-                      <Button
+                      <button
                         type="submit"
-                        size="md"
-                        variant="primary"
-                        className="w-full mt-2"
-                        isLoading={isVerifyingOtp}
+                        disabled={isVerifyingOtp}
+                        className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer mt-2"
                       >
-                        Verify & Continue
-                      </Button>
+                        {isVerifyingOtp ? "Verifying..." : "Verify & Continue"}
+                      </button>
                     </form>
                   )}
                 </div>
@@ -640,30 +611,52 @@ function AuthContent() {
                     {...employerLoginForm.register("password")}
                   />
 
-                  <Button
+                  <button
                     type="submit"
-                    size="md"
-                    variant="primary"
-                    className="w-full mt-2"
-                    isLoading={employerLoginForm.formState.isSubmitting}
+                    className="w-full py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer mt-2"
                   >
-                    Sign In to Company Portal
-                  </Button>
+                    <span>Sign In to Company Portal</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </form>
               )}
 
-              <div className="pt-4 border-t border-border text-center text-xs text-text-secondary">
-                Don&apos;t have an account?{" "}
+              <div className="pt-4 border-t border-slate-200 text-center text-xs text-slate-600 font-medium">
+                New to TAG?{" "}
                 <button
                   type="button"
                   onClick={() => switchMode("signup")}
-                  className="font-semibold text-primary hover:underline cursor-pointer"
+                  className="font-extrabold text-[#2563EB] hover:underline cursor-pointer"
                 >
-                  Create an Account
+                  Join now
                 </button>
               </div>
             </>
           )}
+
+          {/* Official Sponsors Strip */}
+          <div className="pt-6 border-t border-slate-200 text-center space-y-2">
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+              Official Platform Sponsors
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-bold text-[#2563EB]">
+              <a href="https://www.whitetracktech.com" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                WhiteTrack Technologies
+              </a>
+              <span className="text-slate-300">•</span>
+              <a href="https://www.whiteaurax.com" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                WhiteAurax
+              </a>
+              <span className="text-slate-300">•</span>
+              <a href="https://zynorixglobal.com" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                Zynorix Global
+              </a>
+              <span className="text-slate-300">•</span>
+              <a href="https://www.whitetracktech.com" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                Techcy Routes
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -672,7 +665,7 @@ function AuthContent() {
 
 export default function SignUpPage() {
   return (
-    <React.Suspense fallback={<LoadingState message="Loading authentication..." className="min-h-screen" />}>
+    <React.Suspense fallback={<LoadingState message="Loading authentication..." className="min-h-screen bg-[#F8FAFC]" />}>
       <AuthContent />
     </React.Suspense>
   );

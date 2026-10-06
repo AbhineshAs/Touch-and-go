@@ -136,7 +136,7 @@ export default function ApplicantPipelinePage() {
 
       {/* KANBAN VIEW */}
       {viewMode === "kanban" ? (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
+        <div className="flex flex-row overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-thin">
           {PIPELINE_STAGES.map((stg) => {
             const stageApplicants = filteredApplicants.filter((a) => a.stage === stg);
             return (

@@ -688,7 +688,7 @@ export default function OnboardingDiscoveryPage() {
                 <label className="text-xs font-bold text-text-primary">
                   Have you built a working application or coursework project already?
                 </label>
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   {[
                     { id: "yes", label: "Yes, I have an existing project" },
                     { id: "no", label: "No, starting from scratch" },

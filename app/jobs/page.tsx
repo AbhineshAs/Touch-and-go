@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useTransition } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PublicNavbar } from "@/components/layout/PublicNavbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { Input, SearchInput } from "@/components/ui/Input";
-import { Card } from "@/components/ui/Card";
-import { Badge, MatchBadge, SkillBadge } from "@/components/ui/Badge";
+import { MatchBadge, SkillBadge } from "@/components/ui/Badge";
 import { Drawer } from "@/components/ui/Modal";
 import { LoadingState, EmptyState } from "@/components/ui/States";
 import { Pagination } from "@/components/ui/Tabs";
@@ -19,9 +18,9 @@ import {
   Bookmark,
   Building2,
   ShieldCheck,
-  Check,
   ChevronDown,
-  ArrowUpDown,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
 import { Job, WorkMode, EmploymentType, ExperienceLevel } from "@/types";
 import { getJobs, JobFilterParams } from "@/lib/api/jobs";
@@ -89,7 +88,6 @@ function JobsSearchContent() {
       setAuthGateOpen(true);
       return;
     }
-    // Optimistic update for safe save action
     const isCurrentlySaved = savedJobIds.includes(jobId);
     setSavedJobIds((prev) =>
       isCurrentlySaved ? prev.filter((id) => id !== jobId) : [...prev, jobId]
@@ -123,13 +121,13 @@ function JobsSearchContent() {
     selectedLevels.length;
 
   const FilterControls = () => (
-    <div className="flex flex-col gap-6 text-xs">
-      <div className="flex items-center justify-between pb-3 border-b border-border">
-        <span className="font-bold text-sm text-text-primary">Filters</span>
+    <div className="flex flex-col gap-6 text-xs font-sans text-slate-700">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+        <span className="font-extrabold text-sm text-slate-900">Filters</span>
         {activeFilterCount > 0 && (
           <button
             onClick={clearAllFilters}
-            className="text-primary hover:underline font-medium cursor-pointer"
+            className="text-[#2563EB] hover:underline font-bold cursor-pointer text-xs"
           >
             Clear all ({activeFilterCount})
           </button>
@@ -138,9 +136,9 @@ function JobsSearchContent() {
 
       {/* Work Mode */}
       <div className="flex flex-col gap-2.5">
-        <label className="font-semibold text-text-primary">Work Mode</label>
+        <label className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Work Mode</label>
         {workModeOptions.map((mode) => (
-          <label key={mode} className="flex items-center gap-2 text-text-secondary cursor-pointer">
+          <label key={mode} className="flex items-center gap-2.5 text-slate-700 hover:text-slate-900 cursor-pointer font-medium">
             <input
               type="checkbox"
               checked={selectedWorkModes.includes(mode)}
@@ -151,7 +149,7 @@ function JobsSearchContent() {
                     : selectedWorkModes.filter((m) => m !== mode)
                 );
               }}
-              className="rounded border-border text-primary focus:ring-primary/20 accent-primary w-4 h-4"
+              className="rounded border-slate-300 text-[#2563EB] focus:ring-blue-500/20 accent-[#2563EB] w-4 h-4"
             />
             <span>{mode}</span>
           </label>
@@ -159,10 +157,10 @@ function JobsSearchContent() {
       </div>
 
       {/* Employment Type */}
-      <div className="flex flex-col gap-2.5 pt-4 border-t border-border-subtle">
-        <label className="font-semibold text-text-primary">Employment Type</label>
+      <div className="flex flex-col gap-2.5 pt-4 border-t border-slate-200">
+        <label className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Employment Type</label>
         {employmentTypeOptions.map((type) => (
-          <label key={type} className="flex items-center gap-2 text-text-secondary cursor-pointer">
+          <label key={type} className="flex items-center gap-2.5 text-slate-700 hover:text-slate-900 cursor-pointer font-medium">
             <input
               type="checkbox"
               checked={selectedTypes.includes(type)}
@@ -173,7 +171,7 @@ function JobsSearchContent() {
                     : selectedTypes.filter((t) => t !== type)
                 );
               }}
-              className="rounded border-border text-primary focus:ring-primary/20 accent-primary w-4 h-4"
+              className="rounded border-slate-300 text-[#2563EB] focus:ring-blue-500/20 accent-[#2563EB] w-4 h-4"
             />
             <span>{type}</span>
           </label>
@@ -181,10 +179,10 @@ function JobsSearchContent() {
       </div>
 
       {/* Experience Level */}
-      <div className="flex flex-col gap-2.5 pt-4 border-t border-border-subtle">
-        <label className="font-semibold text-text-primary">Experience Level</label>
+      <div className="flex flex-col gap-2.5 pt-4 border-t border-slate-200">
+        <label className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Experience Level</label>
         {experienceOptions.map((lvl) => (
-          <label key={lvl} className="flex items-center gap-2 text-text-secondary cursor-pointer">
+          <label key={lvl} className="flex items-center gap-2.5 text-slate-700 hover:text-slate-900 cursor-pointer font-medium">
             <input
               type="checkbox"
               checked={selectedLevels.includes(lvl)}
@@ -195,7 +193,7 @@ function JobsSearchContent() {
                     : selectedLevels.filter((l) => l !== lvl)
                 );
               }}
-              className="rounded border-border text-primary focus:ring-primary/20 accent-primary w-4 h-4"
+              className="rounded border-slate-300 text-[#2563EB] focus:ring-blue-500/20 accent-[#2563EB] w-4 h-4"
             />
             <span>{lvl}</span>
           </label>
@@ -205,15 +203,15 @@ function JobsSearchContent() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-text-primary">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-slate-900 font-sans">
       <PublicNavbar />
 
       {/* Top Search Banner */}
-      <div className="bg-surface border-b border-border py-6 px-4 sm:px-6 lg:px-8">
+      <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/90 py-6 px-4 sm:px-6 lg:px-8 shadow-2xs">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-3">
           <div className="w-full flex-1">
             <SearchInput
-              placeholder="Search by job title or skills (e.g. React, Python, SOC)..."
+              placeholder="Search by job title or skills (e.g. React, Python, Node, AI)..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               onClear={() => setKeyword("")}
@@ -222,8 +220,8 @@ function JobsSearchContent() {
 
           <div className="w-full md:w-72 flex items-center">
             <Input
-              placeholder="City (e.g. Bengaluru, Kochi, Remote)"
-              leftIcon={<MapPin className="w-4 h-4" />}
+              placeholder="City (e.g. Bengaluru, Gurgaon, Remote)"
+              leftIcon={<MapPin className="w-4 h-4 text-[#2563EB]" />}
               value={location}
               onChange={(e) => setLocation(e.target.value)}
             />
@@ -242,17 +240,17 @@ function JobsSearchContent() {
             </Button>
 
             {/* Sort Selector */}
-            <div className="relative flex-1 md:w-48">
+            <div className="relative flex-1 md:w-52">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full appearance-none rounded-lg bg-surface border border-border px-3 py-2 pr-8 text-xs font-medium text-text-primary focus:outline-none focus:border-primary cursor-pointer"
+                className="w-full appearance-none rounded-xl bg-slate-50 border border-slate-300 px-3.5 py-2.5 pr-8 text-xs font-bold text-slate-900 focus:outline-none focus:border-[#2563EB] cursor-pointer"
               >
                 <option value="relevant">Sort: Most Relevant</option>
                 <option value="match">Sort: Highest Match</option>
                 <option value="newest">Sort: Newest First</option>
               </select>
-              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           </div>
         </div>
@@ -263,18 +261,18 @@ function JobsSearchContent() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Desktop Left Filter Sidebar */}
           <aside className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-24 bg-surface p-5 rounded-xl border border-border shadow-xs">
+            <div className="sticky top-24 bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
               <FilterControls />
             </div>
           </aside>
 
           {/* Job Results List */}
           <main className="lg:col-span-3 flex flex-col gap-4">
-            <div className="flex items-center justify-between text-xs text-text-muted pb-2">
+            <div className="flex items-center justify-between text-xs text-slate-500 font-medium pb-2">
               <span>
-                Showing <strong className="text-text-primary">{jobs.length}</strong> verified opportunities
+                Showing <strong className="text-slate-900 font-bold">{jobs.length}</strong> verified opportunities in India
               </span>
-              <span>Explainable criteria matching active</span>
+              <span className="text-[#2563EB] font-bold">Criteria Match Active</span>
             </div>
 
             {isLoading ? (
@@ -293,7 +291,10 @@ function JobsSearchContent() {
                 {jobs.map((job) => {
                   const isSaved = savedJobIds.includes(job.id);
                   return (
-                    <Card key={job.id} hoverable className="p-5 sm:p-6 transition-all">
+                    <div
+                      key={job.id}
+                      className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-2xs hover:shadow-md hover:border-blue-400 transition-all flex flex-col justify-between"
+                    >
                       <div className="flex flex-col gap-4">
                         {/* Header line */}
                         <div className="flex items-start justify-between gap-4">
@@ -301,21 +302,21 @@ function JobsSearchContent() {
                             <img
                               src={job.organizationLogo}
                               alt={job.organizationName}
-                              className="w-12 h-12 rounded-xl object-cover border border-border shrink-0"
+                              className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 shadow-2xs"
                             />
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-text-secondary">
+                                <span className="text-xs font-bold text-slate-600">
                                   {job.organizationName}
                                 </span>
                                 {job.organizationVerified && (
                                   <span title="Verified Employer">
-                                    <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                                    <ShieldCheck className="w-4 h-4 text-[#2563EB]" />
                                   </span>
                                 )}
                               </div>
                               <Link href={`/jobs/${job.slug}`}>
-                                <h2 className="text-base sm:text-lg font-bold text-text-primary hover:text-primary transition-colors mt-0.5 leading-snug">
+                                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 hover:text-[#2563EB] transition-colors mt-0.5 leading-snug">
                                   {job.title}
                                 </h2>
                               </Link>
@@ -328,34 +329,34 @@ function JobsSearchContent() {
                             )}
                             <button
                               onClick={(e) => handleToggleSave(job.id, e)}
-                              className="p-2 rounded-lg border border-border text-text-muted hover:text-primary hover:border-primary/40 transition-colors cursor-pointer"
+                              className="p-2 rounded-xl border border-slate-200 text-slate-400 hover:text-[#2563EB] hover:border-blue-300 transition-colors cursor-pointer"
                               aria-label={isSaved ? "Remove from saved" : "Save job"}
                               title={isSaved ? "Saved" : "Save Job"}
                             >
                               <Bookmark
-                                className={`w-4 h-4 ${isSaved ? "fill-primary text-primary" : ""}`}
+                                className={`w-4 h-4 ${isSaved ? "fill-[#2563EB] text-[#2563EB]" : ""}`}
                               />
                             </button>
                           </div>
                         </div>
 
                         {/* Summary */}
-                        <p className="text-xs sm:text-sm text-text-secondary line-clamp-2 leading-relaxed">
+                        <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed font-medium">
                           {job.summary}
                         </p>
 
                         {/* Key Attributes */}
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary pt-1">
-                          <span className="font-semibold text-text-primary">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 font-semibold pt-1">
+                          <span className="font-bold text-slate-900 font-mono">
                             {formatSalaryRange(job.minSalaryINR, job.maxSalaryINR, job.salaryPeriod)}
                           </span>
-                          <span>•</span>
+                          <span className="text-slate-300">•</span>
                           <span>{job.location}</span>
-                          <span>•</span>
-                          <span className="px-2 py-0.5 rounded bg-border-subtle text-[11px] font-medium">
+                          <span className="text-slate-300">•</span>
+                          <span className="px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-[11px] font-bold text-[#2563EB]">
                             {job.workMode}
                           </span>
-                          <span>•</span>
+                          <span className="text-slate-300">•</span>
                           <span>{job.experienceLevel}</span>
                         </div>
 
@@ -367,20 +368,21 @@ function JobsSearchContent() {
                         </div>
 
                         {/* Footer / Apply action */}
-                        <div className="flex items-center justify-between pt-4 mt-2 border-t border-border-subtle text-xs">
-                          <span className="text-text-muted">
+                        <div className="flex items-center justify-between pt-4 mt-2 border-t border-slate-100 text-xs">
+                          <span className="text-slate-400 font-medium">
                             Posted {formatRelativeTime(job.publishedAt)}
                           </span>
                           <div className="flex items-center gap-2">
                             <Link href={`/jobs/${job.slug}`}>
-                              <Button variant="primary" size="sm">
-                                View Details & Apply
-                              </Button>
+                              <button className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
+                                <Zap className="w-3.5 h-3.5" />
+                                <span>1-Touch Apply</span>
+                              </button>
                             </Link>
                           </div>
                         </div>
                       </div>
-                    </Card>
+                    </div>
                   );
                 })}
 
@@ -404,7 +406,7 @@ function JobsSearchContent() {
       >
         <div className="py-2">
           <FilterControls />
-          <div className="mt-6 pt-4 border-t border-border">
+          <div className="mt-6 pt-4 border-t border-slate-200">
             <Button
               className="w-full"
               size="md"
@@ -439,7 +441,7 @@ function JobsSearchContent() {
 
 export default function JobsSearchPage() {
   return (
-    <React.Suspense fallback={<LoadingState message="Loading jobs marketplace..." className="min-h-screen" />}>
+    <React.Suspense fallback={<LoadingState message="Loading jobs marketplace..." className="min-h-screen bg-[#F8FAFC]" />}>
       <JobsSearchContent />
     </React.Suspense>
   );

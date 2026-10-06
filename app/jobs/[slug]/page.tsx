@@ -615,6 +615,32 @@ export default function JobDetailsPage() {
         }}
       />
 
+      {/* MOBILE STICKY APPLY DOCK */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3.5 z-40 shadow-2xl flex items-center justify-between gap-3">
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs font-bold text-slate-900 truncate">{job.title}</span>
+          <span className="text-[11px] font-extrabold text-[#2563EB]">
+            {formatSalaryRange(job.minSalaryINR, job.maxSalaryINR, job.salaryPeriod)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={handleToggleSave}
+            className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:text-[#2563EB] hover:bg-slate-50 cursor-pointer"
+            aria-label="Save Job"
+          >
+            <Bookmark className={`w-4 h-4 ${isSaved ? "fill-[#2563EB] text-[#2563EB]" : ""}`} />
+          </button>
+          <button
+            onClick={handleApplyClick}
+            className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>1-Touch Apply</span>
+          </button>
+        </div>
+      </div>
+
       <Footer />
     </div>
   );
