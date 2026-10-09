@@ -5,7 +5,7 @@ let orgsState: Organization[] = [...MOCK_ORGANIZATIONS];
 
 export async function getOrganization(slugOrId: string = "org_razorwave"): Promise<Organization | null> {
   await new Promise((r) => setTimeout(r, 200));
-  const org = orgsState.find((o) => o.id === slugOrId || o.slug === slugOrId);
+  const org = orgsState.find((o) => o.id === slugOrId || o.slug === slugOrId) || orgsState[0];
   return org ? { ...org } : null;
 }
 
@@ -14,7 +14,10 @@ export async function updateOrganization(
   updates: Partial<Organization>
 ): Promise<Organization> {
   await new Promise((r) => setTimeout(r, 350));
-  const index = orgsState.findIndex((o) => o.id === id);
+  let index = orgsState.findIndex((o) => o.id === id);
+  if (index === -1 && orgsState.length > 0) {
+    index = 0;
+  }
   if (index === -1) throw new Error("Organization not found");
   orgsState[index] = {
     ...orgsState[index],

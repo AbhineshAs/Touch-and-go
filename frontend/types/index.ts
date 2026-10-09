@@ -358,3 +358,4 @@ export interface ModerationReport {
 }
 
 export * from "./profile";
+export * from "./organization";
