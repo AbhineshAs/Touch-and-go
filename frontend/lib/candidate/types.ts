@@ -84,11 +84,13 @@ export type ChallengeFollowUp =
       additionalContext?: string;
     };
 
-export type SkillLevel = "new" | "learning" | "comfortable" | "confident" | "exploring";
+export type SkillLevel = "new" | "learning" | "comfortable" | "confident" | "exploring" | "expert";
 
 export interface CandidateSkill {
+  id?: string;
   name: string;
   level: SkillLevel;
+  proficiency?: 'Beginner' | 'Comfortable' | 'Advanced' | 'Expert';
 }
 
 export type StrengthId =
@@ -263,10 +265,14 @@ export interface CandidateEducation {
   id: string;
   degree: string;
   institution: string;
+  school?: string;
   fieldOfStudy: string;
   startYear: string;
   endYear: string;
+  startDate?: string;
+  endDate?: string;
   grade?: string;
+  description?: string;
 }
 
 export interface CandidateExperienceItem {
@@ -277,8 +283,12 @@ export interface CandidateExperienceItem {
   startDate: string;
   endDate?: string;
   current: boolean;
+  isCurrent?: boolean;
   description: string;
   skillsUsed: string[];
+  skills?: string[];
+  employmentType?: 'Full-time' | 'Part-time' | 'Internship' | 'Contract' | 'Freelance';
+  locationType?: 'On-site' | 'Hybrid' | 'Remote';
 }
 
 export interface CandidateProject {
@@ -294,9 +304,12 @@ export interface CandidateCertification {
   id: string;
   name: string;
   issuer: string;
+  issuingOrganization?: string;
   issueDate: string;
   expiryDate?: string;
+  expirationDate?: string;
   credentialUrl?: string;
+  credentialId?: string;
 }
 
 export interface CandidateProfileLink {

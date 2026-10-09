@@ -27,10 +27,26 @@ import {
   ArrowLeft,
   Calendar,
   Camera,
+  Award,
+  ExternalLink,
+  Wrench,
+  Check,
 } from "lucide-react";
 import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { formatSalaryRange } from "@/lib/utils";
-import { CandidateSkill } from "@/lib/candidate/types";
+import {
+  CandidateSkill,
+  SkillLevel,
+  CandidateExperienceItem,
+  CandidateEducation,
+  CandidateCertification,
+} from "@/lib/candidate/types";
+import {
+  WorkExperience,
+  Education,
+  Certification,
+  Skill,
+} from "@/types/profile";
 
 export default function CandidateProfilePage() {
   const {
@@ -38,13 +54,19 @@ export default function CandidateProfilePage() {
     completeness,
     updateCandidateProfile,
     addEducation,
+    updateEducation,
     deleteEducation,
     addExperience,
+    updateExperience,
     deleteExperience,
     addProject,
     deleteProject,
     addSkill,
+    updateSkill,
     deleteSkill,
+    addCertification,
+    updateCertification,
+    deleteCertification,
     updatePreferences,
   } = useCandidate();
 
@@ -65,7 +87,7 @@ export default function CandidateProfilePage() {
     }
   }, []);
 
-  // Close modal on Escape key press
+  // Close photo modal on Escape key press
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isModalOpen) {
@@ -141,37 +163,53 @@ export default function CandidateProfilePage() {
   const [location, setLocation] = useState("");
   const [phone, setPhone] = useState("");
 
-  // Add Experience Modal
+  // Work Experience CRUD Modal State
   const [isExpModalOpen, setIsExpModalOpen] = useState(false);
+  const [editingExpId, setEditingExpId] = useState<string | null>(null);
   const [expTitle, setExpTitle] = useState("");
   const [expCompany, setExpCompany] = useState("");
+  const [expEmploymentType, setExpEmploymentType] = useState<WorkExperience["employmentType"]>("Full-time");
   const [expLocation, setExpLocation] = useState("");
+  const [expLocationType, setExpLocationType] = useState<NonNullable<WorkExperience["locationType"]>>("Hybrid");
   const [expStartDate, setExpStartDate] = useState("");
   const [expEndDate, setExpEndDate] = useState("");
   const [expCurrent, setExpCurrent] = useState(false);
   const [expDescription, setExpDescription] = useState("");
   const [expSkills, setExpSkills] = useState("");
 
-  // Add Education Modal
+  // Education CRUD Modal State
   const [isEduModalOpen, setIsEduModalOpen] = useState(false);
+  const [editingEduId, setEditingEduId] = useState<string | null>(null);
+  const [eduSchool, setEduSchool] = useState("");
   const [eduDegree, setEduDegree] = useState("");
-  const [eduInstitution, setEduInstitution] = useState("");
   const [eduField, setEduField] = useState("");
-  const [eduStartYear, setEduStartYear] = useState("");
-  const [eduEndYear, setEduEndYear] = useState("");
+  const [eduStartDate, setEduStartDate] = useState("");
+  const [eduEndDate, setEduEndDate] = useState("");
   const [eduGrade, setEduGrade] = useState("");
+  const [eduDescription, setEduDescription] = useState("");
 
-  // Add Project Modal
+  // Certifications CRUD Modal State
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const [editingCertId, setEditingCertId] = useState<string | null>(null);
+  const [certName, setCertName] = useState("");
+  const [certOrganization, setCertOrganization] = useState("");
+  const [certIssueDate, setCertIssueDate] = useState("");
+  const [certExpirationDate, setCertExpirationDate] = useState("");
+  const [certCredentialId, setCertCredentialId] = useState("");
+  const [certCredentialUrl, setCertCredentialUrl] = useState("");
+
+  // Skills CRUD Modal State
+  const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
+  const [editingSkillKey, setEditingSkillKey] = useState<string | null>(null);
+  const [skillName, setSkillName] = useState("");
+  const [skillProficiency, setSkillProficiency] = useState<Skill["proficiency"]>("Comfortable");
+
+  // Add Project Modal State
   const [isProjModalOpen, setIsProjModalOpen] = useState(false);
   const [projTitle, setProjTitle] = useState("");
   const [projDescription, setProjDescription] = useState("");
   const [projTech, setProjTech] = useState("");
   const [projUrl, setProjUrl] = useState("");
-
-  // Add Skill Modal
-  const [isSkillModalOpen, setIsSkillModalOpen] = useState(false);
-  const [newSkillName, setNewSkillName] = useState("");
-  const [newSkillLevel, setNewSkillLevel] = useState<"new" | "learning" | "comfortable" | "confident">("comfortable");
 
   // Edit Preferences Modal
   const [isPrefsModalOpen, setIsPrefsModalOpen] = useState(false);
@@ -202,6 +240,7 @@ export default function CandidateProfilePage() {
   const { identity, profile } = candidateRecord;
   const fullName = identity?.fullName || "Candidate";
 
+  // Personal Info
   const handleOpenPersonalModal = () => {
     setHeadline(profile?.headline || "");
     setSummary(profile?.summary || "");
@@ -222,59 +261,255 @@ export default function CandidateProfilePage() {
     showNotice();
   };
 
-  const handleAddExperience = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!expTitle || !expCompany) return;
-    addExperience({
-      title: expTitle,
-      company: expCompany,
-      location: expLocation || "India",
-      startDate: expStartDate || "2024",
-      endDate: expCurrent ? undefined : expEndDate || "Present",
-      current: expCurrent,
-      description: expDescription,
-      skillsUsed: expSkills ? expSkills.split(",").map((s) => s.trim()).filter(Boolean) : [],
-    });
-    setIsExpModalOpen(false);
+  // Work Experience Handlers
+  const handleOpenAddExperience = () => {
+    setEditingExpId(null);
     setExpTitle("");
     setExpCompany("");
+    setExpEmploymentType("Full-time");
     setExpLocation("");
+    setExpLocationType("Hybrid");
     setExpStartDate("");
     setExpEndDate("");
+    setExpCurrent(false);
     setExpDescription("");
     setExpSkills("");
-    showNotice();
+    setIsExpModalOpen(true);
   };
 
-  const handleAddEducation = (e: React.FormEvent) => {
+  const handleOpenEditExperience = (exp: CandidateExperienceItem) => {
+    setEditingExpId(exp.id);
+    setExpTitle(exp.title || "");
+    setExpCompany(exp.company || "");
+    setExpEmploymentType(exp.employmentType || "Full-time");
+    setExpLocation(exp.location || "");
+    setExpLocationType(exp.locationType || "Hybrid");
+    setExpStartDate(exp.startDate || "");
+    setExpEndDate(exp.endDate || "");
+    setExpCurrent(Boolean(exp.current || exp.isCurrent));
+    setExpDescription(exp.description || "");
+    const skillsList = exp.skills || exp.skillsUsed || [];
+    setExpSkills(skillsList.join(", "));
+    setIsExpModalOpen(true);
+  };
+
+  const handleSaveExperience = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eduDegree || !eduInstitution) return;
-    addEducation({
-      degree: eduDegree,
-      institution: eduInstitution,
-      fieldOfStudy: eduField || "Computer Science",
-      startYear: eduStartYear || "2022",
-      endYear: eduEndYear || "2026",
-      grade: eduGrade || undefined,
-    });
-    setIsEduModalOpen(false);
-    setEduDegree("");
-    setEduInstitution("");
-    setEduField("");
-    setEduStartYear("");
-    setEduEndYear("");
-    setEduGrade("");
+    if (!expTitle.trim() || !expCompany.trim()) return;
+
+    const parsedSkills = expSkills
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const expPayload = {
+      title: expTitle.trim(),
+      company: expCompany.trim(),
+      employmentType: expEmploymentType,
+      location: expLocation.trim() || "India",
+      locationType: expLocationType,
+      startDate: expStartDate.trim() || "Present",
+      endDate: expCurrent ? undefined : (expEndDate.trim() || undefined),
+      current: expCurrent,
+      isCurrent: expCurrent,
+      description: expDescription.trim(),
+      skillsUsed: parsedSkills,
+      skills: parsedSkills,
+    };
+
+    if (editingExpId) {
+      updateExperience(editingExpId, expPayload);
+    } else {
+      addExperience(expPayload);
+    }
+
+    setIsExpModalOpen(false);
     showNotice();
   };
 
+  const handleDeleteExperience = (id: string) => {
+    deleteExperience(id);
+    showNotice();
+  };
+
+  // Education Handlers
+  const handleOpenAddEducation = () => {
+    setEditingEduId(null);
+    setEduSchool("");
+    setEduDegree("");
+    setEduField("");
+    setEduStartDate("");
+    setEduEndDate("");
+    setEduGrade("");
+    setEduDescription("");
+    setIsEduModalOpen(true);
+  };
+
+  const handleOpenEditEducation = (edu: CandidateEducation) => {
+    setEditingEduId(edu.id);
+    setEduSchool(edu.school || edu.institution || "");
+    setEduDegree(edu.degree || "");
+    setEduField(edu.fieldOfStudy || "");
+    setEduStartDate(edu.startDate || edu.startYear || "");
+    setEduEndDate(edu.endDate || edu.endYear || "");
+    setEduGrade(edu.grade || "");
+    setEduDescription(edu.description || "");
+    setIsEduModalOpen(true);
+  };
+
+  const handleSaveEducation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eduSchool.trim() || !eduDegree.trim()) return;
+
+    const eduPayload = {
+      school: eduSchool.trim(),
+      institution: eduSchool.trim(),
+      degree: eduDegree.trim(),
+      fieldOfStudy: eduField.trim() || "General",
+      startDate: eduStartDate.trim() || "2022",
+      endDate: eduEndDate.trim() || "2026",
+      startYear: eduStartDate.trim() || "2022",
+      endYear: eduEndDate.trim() || "2026",
+      grade: eduGrade.trim() || undefined,
+      description: eduDescription.trim() || undefined,
+    };
+
+    if (editingEduId) {
+      updateEducation(editingEduId, eduPayload);
+    } else {
+      addEducation(eduPayload);
+    }
+
+    setIsEduModalOpen(false);
+    showNotice();
+  };
+
+  const handleDeleteEducation = (id: string) => {
+    deleteEducation(id);
+    showNotice();
+  };
+
+  // Certifications Handlers
+  const handleOpenAddCertification = () => {
+    setEditingCertId(null);
+    setCertName("");
+    setCertOrganization("");
+    setCertIssueDate("");
+    setCertExpirationDate("");
+    setCertCredentialId("");
+    setCertCredentialUrl("");
+    setIsCertModalOpen(true);
+  };
+
+  const handleOpenEditCertification = (cert: CandidateCertification) => {
+    setEditingCertId(cert.id);
+    setCertName(cert.name || "");
+    setCertOrganization(cert.issuingOrganization || cert.issuer || "");
+    setCertIssueDate(cert.issueDate || "");
+    setCertExpirationDate(cert.expirationDate || cert.expiryDate || "");
+    setCertCredentialId(cert.credentialId || "");
+    setCertCredentialUrl(cert.credentialUrl || "");
+    setIsCertModalOpen(true);
+  };
+
+  const handleSaveCertification = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!certName.trim() || !certOrganization.trim()) return;
+
+    const certPayload = {
+      name: certName.trim(),
+      issuingOrganization: certOrganization.trim(),
+      issuer: certOrganization.trim(),
+      issueDate: certIssueDate.trim() || new Date().getFullYear().toString(),
+      expirationDate: certExpirationDate.trim() || undefined,
+      expiryDate: certExpirationDate.trim() || undefined,
+      credentialId: certCredentialId.trim() || undefined,
+      credentialUrl: certCredentialUrl.trim() || undefined,
+    };
+
+    if (editingCertId) {
+      updateCertification(editingCertId, certPayload);
+    } else {
+      addCertification(certPayload);
+    }
+
+    setIsCertModalOpen(false);
+    showNotice();
+  };
+
+  const handleDeleteCertification = (id: string) => {
+    deleteCertification(id);
+    showNotice();
+  };
+
+  // Skills Handlers
+  const handleOpenAddSkill = () => {
+    setEditingSkillKey(null);
+    setSkillName("");
+    setSkillProficiency("Comfortable");
+    setIsSkillModalOpen(true);
+  };
+
+  const handleOpenEditSkill = (skill: CandidateSkill) => {
+    setEditingSkillKey(skill.id || skill.name);
+    setSkillName(skill.name);
+    const prof: Skill["proficiency"] =
+      skill.proficiency ||
+      (skill.level === "expert"
+        ? "Expert"
+        : skill.level === "confident"
+        ? "Advanced"
+        : skill.level === "comfortable"
+        ? "Comfortable"
+        : "Beginner");
+    setSkillProficiency(prof);
+    setIsSkillModalOpen(true);
+  };
+
+  const handleSaveSkill = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!skillName.trim()) return;
+
+    const levelMap: Record<Skill["proficiency"], SkillLevel> = {
+      Beginner: "learning",
+      Comfortable: "comfortable",
+      Advanced: "confident",
+      Expert: "expert",
+    };
+
+    const skillPayload: CandidateSkill = {
+      id: editingSkillKey || `skill_${Date.now()}`,
+      name: skillName.trim(),
+      proficiency: skillProficiency,
+      level: levelMap[skillProficiency],
+    };
+
+    if (editingSkillKey) {
+      updateSkill(editingSkillKey, skillPayload);
+    } else {
+      addSkill(skillPayload);
+    }
+
+    setIsSkillModalOpen(false);
+    showNotice();
+  };
+
+  const handleDeleteSkill = (name: string) => {
+    deleteSkill(name);
+    showNotice();
+  };
+
+  // Project Handlers
   const handleAddProject = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!projTitle || !projDescription) return;
+    if (!projTitle.trim() || !projDescription.trim()) return;
     addProject({
-      title: projTitle,
-      description: projDescription,
-      technologies: projTech ? projTech.split(",").map((t) => t.trim()).filter(Boolean) : [],
-      url: projUrl || undefined,
+      title: projTitle.trim(),
+      description: projDescription.trim(),
+      technologies: projTech
+        ? projTech.split(",").map((t) => t.trim()).filter(Boolean)
+        : [],
+      url: projUrl.trim() || undefined,
     });
     setIsProjModalOpen(false);
     setProjTitle("");
@@ -284,18 +519,7 @@ export default function CandidateProfilePage() {
     showNotice();
   };
 
-  const handleAddSkillSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newSkillName.trim()) return;
-    addSkill({
-      name: newSkillName.trim(),
-      level: newSkillLevel,
-    });
-    setIsSkillModalOpen(false);
-    setNewSkillName("");
-    showNotice();
-  };
-
+  // Preferences Handlers
   const handleOpenPrefsModal = () => {
     setPrefWorkMode(profile?.jobPreferences?.desiredWorkModes?.[0] || "any");
     setPrefJobType(profile?.jobPreferences?.employmentTypes?.[0] || "any");
@@ -329,7 +553,7 @@ export default function CandidateProfilePage() {
       )}
 
       {/* Header & Personal Info Card */}
-      <Card className="p-6 sm:p-8 bg-surface border-border shadow-xs flex flex-col gap-6">
+      <Card className="p-6 sm:p-8 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
           <div className="flex items-start gap-5">
             {/* Squircle Avatar Element with Hover State & Click Handler */}
@@ -373,27 +597,27 @@ export default function CandidateProfilePage() {
             />
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                   {fullName}
                 </h1>
                 <span className="text-[11px] font-semibold text-primary bg-primary-soft px-2.5 py-0.5 rounded-full border border-primary/20">
                   {completeness.score}% Complete
                 </span>
               </div>
-              <p className="text-xs sm:text-sm font-medium text-text-secondary">
+              <p className="text-xs sm:text-sm font-medium text-slate-600">
                 {profile?.headline || "Technology Candidate"}
               </p>
-              <div className="flex flex-wrap items-center gap-4 text-xs text-text-muted mt-2">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 mt-2">
                 <span className="flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-text-muted" />
+                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
                   {profile?.location || "India"}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-text-muted" />
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
                   {identity?.email || "candidate@tagjobs.in"}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-text-muted" />
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
                   {profile?.phone || identity?.phone || "+91 98765 43210"}
                 </span>
               </div>
@@ -419,9 +643,9 @@ export default function CandidateProfilePage() {
       </Card>
 
       {/* Professional Summary */}
-      <Card className="p-6 bg-surface border-border flex flex-col gap-3">
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-text-primary">Professional Summary</h2>
+          <h2 className="text-base font-bold text-slate-900">Professional Summary</h2>
           <button
             onClick={handleOpenPersonalModal}
             className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
@@ -430,93 +654,461 @@ export default function CandidateProfilePage() {
             <span>Edit</span>
           </button>
         </div>
-        <p className="text-xs sm:text-sm text-text-secondary leading-relaxed whitespace-pre-line">
+        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
           {profile?.summary || "No professional summary added yet."}
         </p>
       </Card>
 
-      {/* Experience Section */}
-      <div className="flex flex-col gap-4">
+      {/* 1. Work Experience Section */}
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-text-primary">
-            Work Experience ({profile?.experience?.length || 0})
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <Briefcase className="w-4 h-4" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Work Experience ({profile?.experience?.length || 0})
+            </h2>
+          </div>
           <Button
             size="sm"
             variant="outline"
             leftIcon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => setIsExpModalOpen(true)}
+            onClick={handleOpenAddExperience}
           >
             Add Experience
           </Button>
         </div>
 
-        {profile?.experience && profile.experience.length > 0 ? (
-          <div className="flex flex-col gap-4">
+        {!profile?.experience || profile.experience.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+              <Briefcase className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-800">No work experience added yet</p>
+            <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+              Add prior roles, internships, or freelance projects to showcase your commercial experience.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={handleOpenAddExperience}
+            >
+              Add Experience
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 flex flex-col">
             {profile.experience.map((exp) => (
-              <Card key={exp.id} className="p-6 bg-surface border-border flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center shrink-0 font-bold">
-                      <Building2 className="w-5 h-5" />
-                    </div>
-                    <div className="flex flex-col">
-                      <h3 className="text-base font-bold text-text-primary">{exp.title}</h3>
-                      <span className="text-xs font-semibold text-text-secondary">
-                        {exp.company} • {exp.location}
-                      </span>
-                      <span className="text-[11px] text-text-muted mt-0.5">
-                        {exp.startDate} – {exp.current ? "Present" : exp.endDate || "Present"}
-                      </span>
-                    </div>
+              <div
+                key={exp.id}
+                className="py-5 first:pt-0 last:pb-0 flex items-start justify-between gap-4 group"
+              >
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/80 text-slate-800 flex items-center justify-center font-bold text-base shrink-0 shadow-2xs">
+                    {exp.company ? exp.company.charAt(0).toUpperCase() : <Briefcase className="w-5 h-5 text-indigo-600" />}
                   </div>
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                      {exp.title}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                      <span className="text-sm font-semibold text-slate-700">
+                        {exp.company}
+                      </span>
+                      {exp.employmentType && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60">
+                          {exp.employmentType}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        {exp.startDate} – {exp.current || exp.isCurrent ? "Present" : exp.endDate || "Present"}
+                      </span>
+                      {exp.location && (
+                        <span className="flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                          {exp.location}
+                          {exp.locationType && (
+                            <span className="text-slate-400 font-normal">({exp.locationType})</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    {exp.description && (
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2.5 whitespace-pre-line">
+                        {exp.description}
+                      </p>
+                    )}
+                    {(exp.skills && exp.skills.length > 0 ? exp.skills : exp.skillsUsed) && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {(exp.skills && exp.skills.length > 0 ? exp.skills : exp.skillsUsed).map((sk) => (
+                          <span
+                            key={sk}
+                            className="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200/80"
+                          >
+                            {sk}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
+                <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
                   <button
-                    onClick={() => {
-                      deleteExperience(exp.id);
-                      showNotice();
-                    }}
-                    className="p-1.5 text-text-muted hover:text-danger rounded-lg hover:bg-background transition-colors cursor-pointer"
-                    title="Delete experience"
+                    type="button"
+                    onClick={() => handleOpenEditExperience(exp)}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Experience"
+                    aria-label="Edit Experience"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteExperience(exp.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    title="Delete Experience"
+                    aria-label="Delete Experience"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-
-                {exp.description && (
-                  <p className="text-xs sm:text-sm text-text-secondary leading-relaxed pt-1 whitespace-pre-line">
-                    {exp.description}
-                  </p>
-                )}
-
-                {exp.skillsUsed && exp.skillsUsed.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-2">
-                    {exp.skillsUsed.map((sk) => (
-                      <span
-                        key={sk}
-                        className="text-[11px] px-2 py-0.5 rounded bg-background border border-border text-text-secondary"
-                      >
-                        {sk}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </Card>
+              </div>
             ))}
           </div>
-        ) : (
-          <Card className="p-6 bg-surface border-border text-center text-xs text-text-muted">
-            No work experience entries listed yet. Click &ldquo;Add Experience&rdquo; to structure prior positions.
-          </Card>
         )}
-      </div>
+      </Card>
+
+      {/* 2. Education Section */}
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <GraduationCap className="w-4 h-4" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Education ({profile?.education?.length || 0})
+            </h2>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            onClick={handleOpenAddEducation}
+          >
+            Add Education
+          </Button>
+        </div>
+
+        {!profile?.education || profile.education.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+              <GraduationCap className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-800">No education entries added yet</p>
+            <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+              Add your university degrees, diplomas, or academic coursework to demonstrate foundation.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={handleOpenAddEducation}
+            >
+              Add Education
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 flex flex-col">
+            {profile.education.map((edu) => (
+              <div
+                key={edu.id}
+                className="py-5 first:pt-0 last:pb-0 flex items-start justify-between gap-4 group"
+              >
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-base shrink-0 shadow-2xs">
+                    <GraduationCap className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                      {edu.school || edu.institution}
+                    </h3>
+                    <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                      {edu.degree} {edu.fieldOfStudy ? `• ${edu.fieldOfStudy}` : ""}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        {edu.startDate || edu.startYear} – {edu.endDate || edu.endYear}
+                      </span>
+                      {edu.grade && (
+                        <span className="font-semibold text-indigo-600">
+                          Grade: {edu.grade}
+                        </span>
+                      )}
+                    </div>
+                    {edu.description && (
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2 whitespace-pre-line">
+                        {edu.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditEducation(edu)}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Education"
+                    aria-label="Edit Education"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteEducation(edu.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    title="Delete Education"
+                    aria-label="Delete Education"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* 3. Certifications & Licenses Section */}
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <Award className="w-4 h-4" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Certifications &amp; Licenses ({profile?.certifications?.length || 0})
+            </h2>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            onClick={handleOpenAddCertification}
+          >
+            Add Certification
+          </Button>
+        </div>
+
+        {!profile?.certifications || profile.certifications.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+              <Award className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-800">No certifications added yet</p>
+            <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+              Add recognized vendor credentials (e.g., AWS, Meta, Google, Microsoft) to enhance your credibility.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={handleOpenAddCertification}
+            >
+              Add Certification
+            </Button>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 flex flex-col">
+            {profile.certifications.map((cert) => (
+              <div
+                key={cert.id}
+                className="py-5 first:pt-0 last:pb-0 flex items-start justify-between gap-4 group"
+              >
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200/70 text-amber-800 flex items-center justify-center font-bold text-base shrink-0 shadow-2xs">
+                    <Award className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors">
+                      {cert.name}
+                    </h3>
+                    <p className="text-sm font-semibold text-slate-700 mt-0.5">
+                      {cert.issuingOrganization || cert.issuer}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mt-1">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                        Issued {cert.issueDate}
+                        {(cert.expirationDate || cert.expiryDate) && (
+                          <span>• Expires {cert.expirationDate || cert.expiryDate}</span>
+                        )}
+                      </span>
+                      {cert.credentialId && (
+                        <span className="font-mono text-slate-500">
+                          Credential ID: {cert.credentialId}
+                        </span>
+                      )}
+                    </div>
+                    {cert.credentialUrl && (
+                      <a
+                        href={cert.credentialUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline mt-2.5 w-fit"
+                      >
+                        <span>Show credential</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditCertification(cert)}
+                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                    title="Edit Certification"
+                    aria-label="Edit Certification"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCertification(cert.id)}
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    title="Delete Certification"
+                    aria-label="Delete Certification"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* 4. Technical & Domain Skills Section */}
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Wrench className="w-4 h-4" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Technical &amp; Domain Skills ({profile?.skills?.length || 0})
+            </h2>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            onClick={handleOpenAddSkill}
+          >
+            Add Skill
+          </Button>
+        </div>
+
+        {!profile?.skills || profile.skills.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+              <Wrench className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-800">No skills added yet</p>
+            <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+              Add your programming languages, frameworks, developer tools, and domain proficiencies.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={handleOpenAddSkill}
+            >
+              Add Skill
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {profile.skills.map((skill) => {
+              const prof: Skill["proficiency"] =
+                skill.proficiency ||
+                (skill.level === "expert"
+                  ? "Expert"
+                  : skill.level === "confident"
+                  ? "Advanced"
+                  : skill.level === "comfortable"
+                  ? "Comfortable"
+                  : "Beginner");
+
+              const profBadgeColor =
+                prof === "Expert"
+                  ? "bg-purple-50 text-purple-700 border-purple-200"
+                  : prof === "Advanced"
+                  ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                  : prof === "Comfortable"
+                  ? "bg-blue-50 text-blue-700 border-blue-200"
+                  : "bg-slate-100 text-slate-700 border-slate-200";
+
+              return (
+                <div
+                  key={skill.name}
+                  className="p-3.5 rounded-xl bg-white border border-slate-200/90 hover:border-indigo-300 shadow-2xs flex items-center justify-between gap-3 group transition-all"
+                >
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs sm:text-sm font-semibold text-slate-800 truncate">
+                      {skill.name}
+                    </span>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border w-fit mt-1 ${profBadgeColor}`}
+                    >
+                      {prof}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditSkill(skill)}
+                      className="p-1 text-slate-400 hover:text-indigo-600 rounded-md hover:bg-slate-100 transition cursor-pointer"
+                      title={`Edit ${skill.name}`}
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSkill(skill.name)}
+                      className="p-1 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition cursor-pointer"
+                      title={`Delete ${skill.name}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
 
       {/* Projects Section */}
-      <div className="flex flex-col gap-4">
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-text-primary">
-            Projects ({profile?.projects?.length || 0})
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <FolderGit2 className="w-4 h-4" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Projects ({profile?.projects?.length || 0})
+            </h2>
+          </div>
           <Button
             size="sm"
             variant="outline"
@@ -528,190 +1120,103 @@ export default function CandidateProfilePage() {
         </div>
 
         {profile?.projects && profile.projects.length > 0 ? (
-          <div className="flex flex-col gap-4">
+          <div className="divide-y divide-slate-100 flex flex-col">
             {profile.projects.map((proj) => (
-              <Card key={proj.id} className="p-6 bg-surface border-border flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-primary-soft text-primary flex items-center justify-center shrink-0 font-bold">
-                      <FolderGit2 className="w-5 h-5" />
-                    </div>
-                    <div className="flex flex-col">
-                      <h3 className="text-base font-bold text-text-primary">{proj.title}</h3>
-                      {proj.url && (
-                        <a
-                          href={proj.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          {proj.url}
-                        </a>
-                      )}
-                    </div>
+              <div key={proj.id} className="py-5 first:pt-0 last:pb-0 flex items-start justify-between gap-4 group">
+                <div className="flex items-start gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0 shadow-2xs">
+                    <FolderGit2 className="w-5 h-5 text-emerald-600" />
                   </div>
-
-                  <button
-                    onClick={() => {
-                      deleteProject(proj.id);
-                      showNotice();
-                    }}
-                    className="p-1.5 text-text-muted hover:text-danger rounded-lg hover:bg-background transition-colors cursor-pointer"
-                    title="Delete project"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="text-base font-bold text-slate-900">{proj.title}</h3>
+                    {proj.url && (
+                      <a
+                        href={proj.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline mt-1"
+                      >
+                        <span>{proj.url}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    )}
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2 whitespace-pre-line">
+                      {proj.description}
+                    </p>
+                    {proj.technologies && proj.technologies.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2.5">
+                        {proj.technologies.map((t) => (
+                          <span
+                            key={t}
+                            className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-50 text-slate-700 border border-slate-200/80"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-xs sm:text-sm text-text-secondary leading-relaxed pt-1">
-                  {proj.description}
-                </p>
-
-                {proj.technologies && proj.technologies.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 pt-2">
-                    {proj.technologies.map((t) => (
-                      <span
-                        key={t}
-                        className="text-[11px] px-2 py-0.5 rounded bg-background border border-border text-text-secondary"
-                      >
-                        {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="p-6 bg-surface border-border text-center text-xs text-text-muted">
-            No projects added yet. Adding a project provides tangible evidence of your engineering ability.
-          </Card>
-        )}
-      </div>
-
-      {/* Skills Section */}
-      <Card className="p-6 bg-surface border-border flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-text-primary">
-            Technical & Domain Skills ({profile?.skills?.length || 0})
-          </h2>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => setIsSkillModalOpen(true)}
-          >
-            Add Skill
-          </Button>
-        </div>
-
-        {profile?.skills && profile.skills.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {profile.skills.map((skill) => (
-              <div
-                key={skill.name}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md bg-background border border-border"
-              >
-                <span>{skill.name}</span>
-                <span className="text-[10px] px-1 rounded bg-border-subtle text-text-muted capitalize">
-                  {skill.level}
-                </span>
                 <button
                   type="button"
                   onClick={() => {
-                    deleteSkill(skill.name);
+                    deleteProject(proj.id);
                     showNotice();
                   }}
-                  className="hover:text-danger text-text-muted ml-0.5 cursor-pointer"
-                  aria-label={`Remove ${skill.name}`}
+                  className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  title="Delete project"
                 >
-                  ✕
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-xs text-text-muted italic">No skills listed yet.</p>
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 flex flex-col items-center justify-center text-center">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+              <FolderGit2 className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-slate-800">No projects added yet</p>
+            <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
+              Adding a portfolio project provides tangible, verifiable proof of your practical engineering skills.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+              onClick={() => setIsProjModalOpen(true)}
+            >
+              Add Project
+            </Button>
+          </div>
         )}
       </Card>
 
-      {/* Education Section */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-text-primary">
-            Education ({profile?.education?.length || 0})
-          </h2>
-          <Button
-            size="sm"
-            variant="outline"
-            leftIcon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => setIsEduModalOpen(true)}
-          >
-            Add Education
-          </Button>
-        </div>
-
-        {profile?.education && profile.education.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {profile.education.map((edu) => (
-              <Card key={edu.id} className="p-5 bg-surface border-border flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-primary-soft text-primary flex items-center justify-center shrink-0">
-                    <GraduationCap className="w-4 h-4" />
-                  </div>
-                  <div className="flex flex-col">
-                    <h3 className="text-xs font-bold text-text-primary">{edu.degree}</h3>
-                    <span className="text-xs text-text-secondary">{edu.institution}</span>
-                    <span className="text-[11px] text-text-muted">
-                      {edu.startYear} – {edu.endYear} {edu.grade ? `• ${edu.grade}` : ""}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    deleteEducation(edu.id);
-                    showNotice();
-                  }}
-                  className="p-1.5 text-text-muted hover:text-danger rounded-lg hover:bg-background transition-colors cursor-pointer"
-                  title="Delete education"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="p-6 bg-surface border-border text-center text-xs text-text-muted">
-            No education entries added yet.
-          </Card>
-        )}
-      </div>
-
       {/* Job Preferences Card */}
-      <Card className="p-6 bg-surface border-border flex flex-col gap-4">
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-text-primary">Job Preferences</h2>
+          <h2 className="text-base font-bold text-slate-900">Job Preferences</h2>
           <Button size="sm" variant="outline" onClick={handleOpenPrefsModal}>
             Edit Preferences
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="p-3 rounded-lg bg-background border border-border-subtle flex flex-col gap-1">
-            <span className="text-text-muted">Work Mode</span>
-            <span className="font-semibold text-text-primary capitalize">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex flex-col gap-1">
+            <span className="text-slate-500">Work Mode</span>
+            <span className="font-semibold text-slate-900 capitalize">
               {profile?.jobPreferences?.desiredWorkModes?.join(", ") || "Any"}
             </span>
           </div>
-          <div className="p-3 rounded-lg bg-background border border-border-subtle flex flex-col gap-1">
-            <span className="text-text-muted">Job Type</span>
-            <span className="font-semibold text-text-primary capitalize">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex flex-col gap-1">
+            <span className="text-slate-500">Job Type</span>
+            <span className="font-semibold text-slate-900 capitalize">
               {profile?.jobPreferences?.employmentTypes?.join(", ") || "Any"}
             </span>
           </div>
-          <div className="p-3 rounded-lg bg-background border border-border-subtle flex flex-col gap-1">
-            <span className="text-text-muted">Availability</span>
-            <span className="font-semibold text-text-primary capitalize">
+          <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70 flex flex-col gap-1">
+            <span className="text-slate-500">Availability</span>
+            <span className="font-semibold text-slate-900 capitalize">
               {profile?.jobPreferences?.availability?.replace(/_/g, " ") || "Immediate"}
             </span>
           </div>
@@ -763,139 +1268,305 @@ export default function CandidateProfilePage() {
         </form>
       </Modal>
 
-      {/* MODAL: ADD EXPERIENCE */}
+      {/* MODAL: ADD / EDIT WORK EXPERIENCE */}
       <Modal
         isOpen={isExpModalOpen}
         onClose={() => setIsExpModalOpen(false)}
-        title="Add Experience"
-        size="md"
+        title={editingExpId ? "Edit Work Experience" : "Add Work Experience"}
+        description="Highlight your role, company, timeline, and core competencies."
+        size="lg"
       >
-        <form onSubmit={handleAddExperience} className="flex flex-col gap-4">
-          <Input
-            label="Job Title"
-            placeholder="e.g. Frontend Engineer"
-            value={expTitle}
-            onChange={(e) => setExpTitle(e.target.value)}
-            required
-          />
-          <Input
-            label="Company Name"
-            placeholder="e.g. Acme Technologies"
-            value={expCompany}
-            onChange={(e) => setExpCompany(e.target.value)}
-            required
-          />
-          <Input
-            label="Location"
-            placeholder="e.g. Bengaluru, Karnataka (Remote / Hybrid)"
-            value={expLocation}
-            onChange={(e) => setExpLocation(e.target.value)}
-          />
+        <form onSubmit={handleSaveExperience} className="flex flex-col gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              label="Start Date"
-              placeholder="e.g. Jan 2023"
+              label="Job Title *"
+              placeholder="e.g. Senior Frontend Engineer"
+              value={expTitle}
+              onChange={(e) => setExpTitle(e.target.value)}
+              required
+            />
+            <Input
+              label="Company Name *"
+              placeholder="e.g. Google"
+              value={expCompany}
+              onChange={(e) => setExpCompany(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-800">Employment Type *</label>
+              <select
+                value={expEmploymentType}
+                onChange={(e) => setExpEmploymentType(e.target.value as any)}
+                className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Internship">Internship</option>
+                <option value="Contract">Contract</option>
+                <option value="Freelance">Freelance</option>
+              </select>
+            </div>
+
+            <Input
+              label="Location"
+              placeholder="e.g. Bengaluru, India"
+              value={expLocation}
+              onChange={(e) => setExpLocation(e.target.value)}
+            />
+
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-slate-800">Location Type</label>
+              <select
+                value={expLocationType}
+                onChange={(e) => setExpLocationType(e.target.value as any)}
+                className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="On-site">On-site</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Remote">Remote</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="expCurrentRole"
+              checked={expCurrent}
+              onChange={(e) => setExpCurrent(e.target.checked)}
+              className="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer"
+            />
+            <label htmlFor="expCurrentRole" className="text-xs font-medium text-slate-800 cursor-pointer">
+              I am currently working in this role
+            </label>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Start Date *"
+              placeholder="e.g. Jun 2024"
               value={expStartDate}
               onChange={(e) => setExpStartDate(e.target.value)}
+              required
             />
             <Input
               label="End Date"
-              placeholder="e.g. Present"
+              placeholder="e.g. Present or Nov 2026"
               disabled={expCurrent}
               value={expCurrent ? "Present" : expEndDate}
               onChange={(e) => setExpEndDate(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="expCurrent"
-              checked={expCurrent}
-              onChange={(e) => setExpCurrent(e.target.checked)}
-              className="w-4 h-4 rounded text-primary"
-            />
-            <label htmlFor="expCurrent" className="text-xs font-medium text-text-primary">
-              I currently work here
-            </label>
-          </div>
+
           <Textarea
-            label="Responsibilities & Outcomes"
-            placeholder="Describe what you built and the impact achieved."
+            label="Description"
+            placeholder="Describe your core accomplishments, team size, products launched, or systems built."
             value={expDescription}
             onChange={(e) => setExpDescription(e.target.value)}
             rows={3}
           />
+
           <Input
-            label="Key Technologies Used (comma separated)"
-            placeholder="e.g. React, TypeScript, Next.js"
+            label="Skills Used (comma-separated)"
+            placeholder="e.g. React, Next.js, TypeScript, Tailwind CSS"
             value={expSkills}
             onChange={(e) => setExpSkills(e.target.value)}
           />
-          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
             <Button type="button" variant="secondary" size="sm" onClick={() => setIsExpModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">
-              Add Position
+              {editingExpId ? "Save Changes" : "Add Experience"}
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* MODAL: ADD EDUCATION */}
+      {/* MODAL: ADD / EDIT EDUCATION */}
       <Modal
         isOpen={isEduModalOpen}
         onClose={() => setIsEduModalOpen(false)}
-        title="Add Education"
-        size="md"
+        title={editingEduId ? "Edit Education" : "Add Education"}
+        description="Detail your university, degree, coursework, and grades."
+        size="lg"
       >
-        <form onSubmit={handleAddEducation} className="flex flex-col gap-4">
+        <form onSubmit={handleSaveEducation} className="flex flex-col gap-4">
           <Input
-            label="Degree / Qualification"
-            placeholder="e.g. Bachelor of Technology (B.Tech)"
-            value={eduDegree}
-            onChange={(e) => setEduDegree(e.target.value)}
-            required
-          />
-          <Input
-            label="Institution / University"
+            label="School / University *"
             placeholder="e.g. National Institute of Technology"
-            value={eduInstitution}
-            onChange={(e) => setEduInstitution(e.target.value)}
+            value={eduSchool}
+            onChange={(e) => setEduSchool(e.target.value)}
             required
           />
-          <Input
-            label="Field of Study"
-            placeholder="e.g. Computer Science and Engineering"
-            value={eduField}
-            onChange={(e) => setEduField(e.target.value)}
-          />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Input
-              label="Start Year"
-              placeholder="e.g. 2022"
-              value={eduStartYear}
-              onChange={(e) => setEduStartYear(e.target.value)}
+              label="Degree *"
+              placeholder="e.g. Bachelor of Technology (B.Tech)"
+              value={eduDegree}
+              onChange={(e) => setEduDegree(e.target.value)}
+              required
             />
             <Input
-              label="End Year / Expected"
-              placeholder="e.g. 2026"
-              value={eduEndYear}
-              onChange={(e) => setEduEndYear(e.target.value)}
+              label="Field of Study *"
+              placeholder="e.g. Computer Science & Engineering"
+              value={eduField}
+              onChange={(e) => setEduField(e.target.value)}
+              required
             />
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Start Date / Year *"
+              placeholder="e.g. Sep 2022 or 2022"
+              value={eduStartDate}
+              onChange={(e) => setEduStartDate(e.target.value)}
+              required
+            />
+            <Input
+              label="End Date / Year *"
+              placeholder="e.g. May 2026 or 2026"
+              value={eduEndDate}
+              onChange={(e) => setEduEndDate(e.target.value)}
+              required
+            />
+          </div>
+
           <Input
             label="Grade / CGPA (Optional)"
-            placeholder="e.g. 8.5 CGPA or First Class"
+            placeholder="e.g. 8.9 CGPA or 3.8 / 4.0"
             value={eduGrade}
             onChange={(e) => setEduGrade(e.target.value)}
           />
-          <div className="flex justify-end gap-2 pt-3 border-t border-border">
+
+          <Textarea
+            label="Activities & Description (Optional)"
+            placeholder="Notable coursework, student leadership, societies, or awards."
+            value={eduDescription}
+            onChange={(e) => setEduDescription(e.target.value)}
+            rows={2}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
             <Button type="button" variant="secondary" size="sm" onClick={() => setIsEduModalOpen(false)}>
               Cancel
             </Button>
             <Button type="submit" variant="primary" size="sm">
-              Add Education
+              {editingEduId ? "Save Changes" : "Add Education"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL: ADD / EDIT CERTIFICATION */}
+      <Modal
+        isOpen={isCertModalOpen}
+        onClose={() => setIsCertModalOpen(false)}
+        title={editingCertId ? "Edit Certification" : "Add Certification"}
+        description="Add recognized professional licenses, certifications, and credentials."
+        size="lg"
+      >
+        <form onSubmit={handleSaveCertification} className="flex flex-col gap-4">
+          <Input
+            label="Certification Name *"
+            placeholder="e.g. AWS Certified Solutions Architect"
+            value={certName}
+            onChange={(e) => setCertName(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Issuing Organization *"
+            placeholder="e.g. Amazon Web Services (AWS)"
+            value={certOrganization}
+            onChange={(e) => setCertOrganization(e.target.value)}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Issue Date *"
+              placeholder="e.g. Mar 2026"
+              value={certIssueDate}
+              onChange={(e) => setCertIssueDate(e.target.value)}
+              required
+            />
+            <Input
+              label="Expiration Date (Optional)"
+              placeholder="e.g. Mar 2029"
+              value={certExpirationDate}
+              onChange={(e) => setCertExpirationDate(e.target.value)}
+            />
+          </div>
+
+          <Input
+            label="Credential ID (Optional)"
+            placeholder="e.g. AWS-SAA-84920"
+            value={certCredentialId}
+            onChange={(e) => setCertCredentialId(e.target.value)}
+          />
+
+          <Input
+            label="Credential URL (Optional)"
+            placeholder="https://www.credly.com/badges/..."
+            value={certCredentialUrl}
+            onChange={(e) => setCertCredentialUrl(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setIsCertModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="sm">
+              {editingCertId ? "Save Changes" : "Add Certification"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* MODAL: ADD / EDIT SKILL */}
+      <Modal
+        isOpen={isSkillModalOpen}
+        onClose={() => setIsSkillModalOpen(false)}
+        title={editingSkillKey ? "Edit Skill" : "Add Skill"}
+        description="Declare your competency level across key technical and domain capabilities."
+        size="md"
+      >
+        <form onSubmit={handleSaveSkill} className="flex flex-col gap-4">
+          <Input
+            label="Skill Name *"
+            placeholder="e.g. TypeScript, React, Docker"
+            value={skillName}
+            onChange={(e) => setSkillName(e.target.value)}
+            required
+          />
+
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-semibold text-slate-800">Proficiency Level *</label>
+            <select
+              value={skillProficiency}
+              onChange={(e) => setSkillProficiency(e.target.value as any)}
+              className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="Beginner">Beginner (Foundational understanding)</option>
+              <option value="Comfortable">Comfortable (Can build independently)</option>
+              <option value="Advanced">Advanced (Production experience)</option>
+              <option value="Expert">Expert (Subject matter authority)</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setIsSkillModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="sm">
+              {editingSkillKey ? "Save Changes" : "Add Skill"}
             </Button>
           </div>
         </form>
@@ -910,14 +1581,14 @@ export default function CandidateProfilePage() {
       >
         <form onSubmit={handleAddProject} className="flex flex-col gap-4">
           <Input
-            label="Project Title"
+            label="Project Title *"
             placeholder="e.g. Real-Time Chat Platform"
             value={projTitle}
             onChange={(e) => setProjTitle(e.target.value)}
             required
           />
           <Textarea
-            label="Project Description"
+            label="Project Description *"
             placeholder="Explain the purpose of the project, your contribution, and architecture."
             value={projDescription}
             onChange={(e) => setProjDescription(e.target.value)}
@@ -947,54 +1618,16 @@ export default function CandidateProfilePage() {
         </form>
       </Modal>
 
-      {/* MODAL: ADD SKILL */}
-      <Modal
-        isOpen={isSkillModalOpen}
-        onClose={() => setIsSkillModalOpen(false)}
-        title="Add Technical Skill"
-        size="sm"
-      >
-        <form onSubmit={handleAddSkillSubmit} className="flex flex-col gap-4">
-          <Input
-            label="Skill Name"
-            placeholder="e.g. Docker, GraphQL, Kubernetes"
-            value={newSkillName}
-            onChange={(e) => setNewSkillName(e.target.value)}
-            required
-          />
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-text-primary">Familiarity Level</label>
-            <select
-              value={newSkillLevel}
-              onChange={(e) => setNewSkillLevel(e.target.value as any)}
-              className="h-10 px-3 rounded-xl border border-border bg-surface text-xs text-text-primary"
-            >
-              <option value="learning">Learning</option>
-              <option value="comfortable">Comfortable</option>
-              <option value="confident">Confident</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-2 pt-3 border-t border-border">
-            <Button type="button" variant="secondary" size="sm" onClick={() => setIsSkillModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary" size="sm">
-              Add Skill
-            </Button>
-          </div>
-        </form>
-      </Modal>
-
       {/* MODAL: EDIT PREFERENCES */}
       <Modal
         isOpen={isPrefsModalOpen}
         onClose={() => setIsPrefsModalOpen(false)}
-        title="Edit Work & Job Preferences"
+        title="Edit Job Preferences"
         size="md"
       >
         <form onSubmit={handleSavePreferences} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-text-primary">Preferred Work Mode</label>
+            <label className="text-xs font-semibold text-text-primary">Work Mode</label>
             <select
               value={prefWorkMode}
               onChange={(e) => setPrefWorkMode(e.target.value as any)}

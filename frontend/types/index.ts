@@ -356,3 +356,5 @@ export interface ModerationReport {
   createdAt: string;
   notes?: string;
 }
+
+export * from "./profile";

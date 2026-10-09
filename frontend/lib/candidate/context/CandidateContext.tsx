@@ -65,13 +65,19 @@ export interface CandidateContextType {
   // Profile Updates
   updateCandidateProfile: (partial: Partial<StructuredProfile>) => void;
   addEducation: (edu: Omit<CandidateEducation, "id">) => void;
+  updateEducation: (id: string, edu: Partial<CandidateEducation>) => void;
   deleteEducation: (id: string) => void;
   addExperience: (exp: Omit<CandidateExperienceItem, "id">) => void;
+  updateExperience: (id: string, exp: Partial<CandidateExperienceItem>) => void;
   deleteExperience: (id: string) => void;
   addProject: (proj: Omit<CandidateProject, "id">) => void;
   deleteProject: (id: string) => void;
   addSkill: (skill: CandidateSkill) => void;
+  updateSkill: (oldNameOrId: string, skill: CandidateSkill) => void;
   deleteSkill: (skillName: string) => void;
+  addCertification: (cert: Omit<CandidateCertification, "id">) => void;
+  updateCertification: (id: string, cert: Partial<CandidateCertification>) => void;
+  deleteCertification: (id: string) => void;
   updatePreferences: (prefs: Partial<CandidateJobPreferences>) => void;
 
   // Job Interactions
@@ -482,6 +488,26 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const updateEducation = useCallback(
+    (id: string, updated: Partial<CandidateEducation>) => {
+      setCandidateRecord((prev) => {
+        if (!prev) return null;
+        const nextRev = prev.profileRevision + 1;
+        return {
+          ...prev,
+          profileRevision: nextRev,
+          profile: {
+            ...prev.profile,
+            education: prev.profile.education.map((e) =>
+              e.id === id ? { ...e, ...updated } : e
+            ),
+          },
+        };
+      });
+    },
+    []
+  );
+
   const deleteEducation = useCallback((id: string) => {
     setCandidateRecord((prev) => {
       if (!prev) return null;
@@ -512,6 +538,26 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
           profile: {
             ...prev.profile,
             experience: [newExp, ...prev.profile.experience],
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const updateExperience = useCallback(
+    (id: string, updated: Partial<CandidateExperienceItem>) => {
+      setCandidateRecord((prev) => {
+        if (!prev) return null;
+        const nextRev = prev.profileRevision + 1;
+        return {
+          ...prev,
+          profileRevision: nextRev,
+          profile: {
+            ...prev.profile,
+            experience: prev.profile.experience.map((e) =>
+              e.id === id ? { ...e, ...updated } : e
+            ),
           },
         };
       });
@@ -597,6 +643,28 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const updateSkill = useCallback(
+    (oldNameOrId: string, updated: CandidateSkill) => {
+      setCandidateRecord((prev) => {
+        if (!prev) return null;
+        const nextRev = prev.profileRevision + 1;
+        return {
+          ...prev,
+          profileRevision: nextRev,
+          profile: {
+            ...prev.profile,
+            skills: prev.profile.skills.map((s) => {
+              if (s.id && s.id === oldNameOrId) return updated;
+              if (s.name.toLowerCase() === oldNameOrId.toLowerCase()) return updated;
+              return s;
+            }),
+          },
+        };
+      });
+    },
+    []
+  );
+
   const deleteSkill = useCallback((skillName: string) => {
     setCandidateRecord((prev) => {
       if (!prev) return null;
@@ -609,6 +677,63 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
           skills: prev.profile.skills.filter(
             (s) => s.name.toLowerCase() !== skillName.toLowerCase()
           ),
+        },
+      };
+    });
+  }, []);
+
+  const addCertification = useCallback(
+    (cert: Omit<CandidateCertification, "id">) => {
+      setCandidateRecord((prev) => {
+        if (!prev) return null;
+        const nextRev = prev.profileRevision + 1;
+        const newCert: CandidateCertification = {
+          ...cert,
+          id: `cert_${Date.now()}`,
+        };
+        return {
+          ...prev,
+          profileRevision: nextRev,
+          profile: {
+            ...prev.profile,
+            certifications: [newCert, ...(prev.profile.certifications || [])],
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const updateCertification = useCallback(
+    (id: string, updated: Partial<CandidateCertification>) => {
+      setCandidateRecord((prev) => {
+        if (!prev) return null;
+        const nextRev = prev.profileRevision + 1;
+        return {
+          ...prev,
+          profileRevision: nextRev,
+          profile: {
+            ...prev.profile,
+            certifications: (prev.profile.certifications || []).map((c) =>
+              c.id === id ? { ...c, ...updated } : c
+            ),
+          },
+        };
+      });
+    },
+    []
+  );
+
+  const deleteCertification = useCallback((id: string) => {
+    setCandidateRecord((prev) => {
+      if (!prev) return null;
+      const nextRev = prev.profileRevision + 1;
+      return {
+        ...prev,
+        profileRevision: nextRev,
+        profile: {
+          ...prev.profile,
+          certifications: (prev.profile.certifications || []).filter((c) => c.id !== id),
         },
       };
     });
@@ -1119,13 +1244,19 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
         confirmProfile,
         updateCandidateProfile,
         addEducation,
+        updateEducation,
         deleteEducation,
         addExperience,
+        updateExperience,
         deleteExperience,
         addProject,
         deleteProject,
         addSkill,
+        updateSkill,
         deleteSkill,
+        addCertification,
+        updateCertification,
+        deleteCertification,
         updatePreferences,
         toggleSaveJob,
         applyToJob,
