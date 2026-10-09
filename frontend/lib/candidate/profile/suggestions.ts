@@ -100,8 +100,8 @@ export function deriveProfileSuggestions(
       title: "Open your structured resume builder",
       description:
         "You requested CV guidance. Use the built-in printable resume builder to structure your experience cleanly.",
-      actionLabel: "Open Resume Builder",
-      targetHref: "/candidate/profile/resume",
+      actionLabel: "Open Resume",
+      targetHref: "/candidate/resume",
     });
   }
 

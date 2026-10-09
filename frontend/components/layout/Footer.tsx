@@ -29,7 +29,7 @@ export function Footer() {
             <ul className="flex flex-col gap-2.5 text-slate-400 font-medium">
               <li><Link href="/jobs" className="hover:text-blue-400 transition-colors">Explore All Jobs</Link></li>
               <li><Link href="/candidate/recommended" className="hover:text-blue-400 transition-colors">Recommended Matches</Link></li>
-              <li><Link href="/candidate/profile/resume" className="hover:text-blue-400 transition-colors">Upload &amp; Structure Resume</Link></li>
+              <li><Link href="/candidate/resume" className="hover:text-blue-400 transition-colors">Upload &amp; Structure Resume</Link></li>
               <li><Link href="/candidate/applications" className="hover:text-blue-400 transition-colors">Track Applications</Link></li>
             </ul>
           </div>

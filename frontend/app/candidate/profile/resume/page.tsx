@@ -1,7 +1,7 @@
 "use client";
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -30,6 +30,12 @@ import { ResumeSectionId } from "@/lib/candidate/types";
 import { cn } from "@/lib/utils";
 
 export default function ResumeBuilderPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/candidate/resume");
+  }, [router]);
+
   const {
     candidateRecord,
     resumeDraft,

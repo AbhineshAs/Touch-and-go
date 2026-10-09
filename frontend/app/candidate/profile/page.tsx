@@ -288,9 +288,9 @@ export default function CandidateProfilePage() {
             >
               Edit Details
             </Button>
-            <Link href="/candidate/profile/resume">
+            <Link href="/candidate/resume">
               <Button size="sm" variant="primary" leftIcon={<FileText className="w-3.5 h-3.5" />}>
-                Open Resume Builder
+                Resume
               </Button>
             </Link>
           </div>

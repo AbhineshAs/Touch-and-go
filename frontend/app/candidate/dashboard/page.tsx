@@ -134,26 +134,20 @@ export default function CandidateDashboardPage() {
 
         <div className="flex items-center gap-3">
           {hasPendingResumeUpdates ? (
-            <Link href="/candidate/profile/resume">
+            <Link href="/candidate/resume">
               <Button
                 size="sm"
                 variant="primary"
                 className="bg-amber-600 hover:bg-amber-700 text-white"
                 leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
               >
-                Review Profile Updates
-              </Button>
-            </Link>
-          ) : hasResumeDraft ? (
-            <Link href="/candidate/profile/resume">
-              <Button size="sm" variant="outline" leftIcon={<FileText className="w-3.5 h-3.5" />}>
-                Continue Resume
+                Review Resume Updates
               </Button>
             </Link>
           ) : (
-            <Link href="/candidate/profile/resume">
+            <Link href="/candidate/resume">
               <Button size="sm" variant="outline" leftIcon={<FileText className="w-3.5 h-3.5" />}>
-                Create Resume
+                Resume
               </Button>
             </Link>
           )}
