@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -38,12 +38,26 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
   const { user: authUser, logout } = useAuth();
   const { candidateRecord, resetAll } = useCandidate();
 
+  const [storedAvatar, setStoredAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    const syncAvatar = () => {
+      if (typeof window !== "undefined") {
+        setStoredAvatar(localStorage.getItem("tag_candidate_avatar"));
+      }
+    };
+    syncAvatar();
+    window.addEventListener("storage", syncAvatar);
+    return () => window.removeEventListener("storage", syncAvatar);
+  }, []);
+
   const candidateName = candidateRecord?.identity.fullName || authUser?.name || "Alen William";
   const candidateEmail = candidateRecord?.identity.email || authUser?.email || "alenwilliam92@gmail.com";
   const candidateAvatar =
-    candidateName.toLowerCase().includes("ananya")
+    storedAvatar ||
+    (candidateName.toLowerCase().includes("ananya")
       ? MOCK_USERS.candidate.avatarUrl
-      : undefined;
+      : undefined);
 
   const applicationsCount = candidateRecord?.applications.length || 0;
   const savedJobsCount = candidateRecord?.savedJobIds.length || 0;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
@@ -26,6 +26,7 @@ import {
   FolderGit2,
   ArrowLeft,
   Calendar,
+  Camera,
 } from "lucide-react";
 import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { formatSalaryRange } from "@/lib/utils";
@@ -48,6 +49,90 @@ export default function CandidateProfilePage() {
   } = useCandidate();
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+
+  // Profile Photo State & Management Modal
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync photoUrl with localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedPhoto = localStorage.getItem("tag_candidate_avatar");
+      if (savedPhoto) {
+        setPhotoUrl(savedPhoto);
+      }
+    }
+  }, []);
+
+  // Close modal on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isModalOpen]);
+
+  // Clean up object URLs to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (photoUrl && photoUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(photoUrl);
+      }
+    };
+  }, [photoUrl]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file (PNG, JPEG, or WebP).");
+      return;
+    }
+
+    if (photoUrl && photoUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(photoUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoUrl(previewUrl);
+    setIsModalOpen(false);
+
+    // Save as Data URL in localStorage for session persistence & sidebar sync
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === "string") {
+        try {
+          localStorage.setItem("tag_candidate_avatar", reader.result);
+          window.dispatchEvent(new Event("storage"));
+        } catch (err) {
+          console.warn("Could not save avatar to localStorage:", err);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    if (photoUrl && photoUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(photoUrl);
+    }
+    setPhotoUrl(null);
+    try {
+      localStorage.removeItem("tag_candidate_avatar");
+      window.dispatchEvent(new Event("storage"));
+    } catch (err) {
+      console.warn("Could not remove avatar from localStorage:", err);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    setIsModalOpen(false);
+  };
 
   // Edit Personal Info Modal
   const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false);
@@ -247,9 +332,45 @@ export default function CandidateProfilePage() {
       <Card className="p-6 sm:p-8 bg-surface border-border shadow-xs flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
           <div className="flex items-start gap-5">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary-dark text-white flex items-center justify-center font-black text-2xl shrink-0 shadow-sm">
-              {fullName.charAt(0).toUpperCase()}
+            {/* Squircle Avatar Element with Hover State & Click Handler */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => setIsModalOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsModalOpen(true);
+                }
+              }}
+              className="relative group w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-black text-2xl shrink-0 shadow-sm overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition"
+              aria-label="Change profile photo"
+              title="Change profile photo"
+            >
+              {photoUrl ? (
+                <img
+                  src={photoUrl}
+                  alt={fullName}
+                  className="object-cover w-full h-full"
+                />
+              ) : (
+                <span>{fullName.charAt(0).toUpperCase()}</span>
+              )}
+
+              {/* Hover Dark Overlay with Camera Icon */}
+              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity flex items-center justify-center text-white">
+                <Camera className="w-6 h-6 drop-shadow-sm" />
+              </div>
             </div>
+
+            {/* Hidden File Input for Avatar Upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png, image/jpeg, image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+            />
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold tracking-tight text-text-primary">
@@ -932,6 +1053,52 @@ export default function CandidateProfilePage() {
           </div>
         </form>
       </Modal>
+
+      {/* "Change Profile Photo" Modal Dialog */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setIsModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="change-photo-dialog-title"
+        >
+          <div
+            className="max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden text-center animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              id="change-photo-dialog-title"
+              className="text-slate-800 text-base font-semibold py-4 border-b border-slate-100"
+            >
+              Change Profile Photo
+            </h3>
+            <div className="flex flex-col divide-y divide-slate-100">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full text-blue-600 font-semibold text-sm py-3.5 hover:bg-blue-50/50 transition cursor-pointer"
+              >
+                Upload Photo
+              </button>
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                className="w-full text-red-500 font-semibold text-sm py-3.5 hover:bg-red-50/50 transition cursor-pointer"
+              >
+                Remove Current Photo
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="w-full text-slate-700 font-medium text-sm py-3.5 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
