@@ -16,6 +16,8 @@ import {
   Menu,
   X,
   LogOut,
+  Briefcase,
+  FileEdit,
 } from "lucide-react";
 import { MOCK_USERS } from "@/lib/mocks/data";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -53,7 +55,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
     {
       label: "Applications",
       href: "/candidate/applications",
-      icon: <FileText className="w-4 h-4" />,
+      icon: <Briefcase className="w-4 h-4" />,
       badge: applicationsCount > 0 ? applicationsCount : undefined,
     },
     {
@@ -61,6 +63,11 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
       href: "/candidate/saved",
       icon: <Bookmark className="w-4 h-4" />,
       badge: savedJobsCount > 0 ? savedJobsCount : undefined,
+    },
+    {
+      label: "Resume",
+      href: "/candidate/resume",
+      icon: <FileText className="w-4 h-4" />,
     },
     { label: "Profile", href: "/candidate/profile", icon: <User className="w-4 h-4" /> },
   ];
