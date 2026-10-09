@@ -11,12 +11,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CheckCircle2,
-  Plus,
-  Trash2,
   ShieldCheck,
-  Building2,
-  MapPin,
   Sparkles,
 } from "lucide-react";
 import { createJob } from "@/lib/api/jobs";
@@ -55,30 +50,12 @@ export default function JobBuilderPage() {
   const [preferredSkills, setPreferredSkills] = useState(["TanStack Query", "GraphQL", "Playwright"]);
   const [newPrefSkill, setNewPrefSkill] = useState("");
 
-  // Step 4 - Screening
-  const [screeningQuestions, setScreeningQuestions] = useState([
-    {
-      id: "sq_new_1",
-      question: "How many years of commercial experience do you have with React in production?",
-      type: "text",
-      required: true,
-    },
-    {
-      id: "sq_new_2",
-      question: "Have you previously maintained a design system across multiple squads?",
-      type: "yes_no",
-      required: true,
-    },
-  ]);
-  const [newQuestionText, setNewQuestionText] = useState("");
-
   const steps = [
     { num: 1, name: "Basics" },
     { num: 2, name: "Description" },
     { num: 3, name: "Requirements" },
-    { num: 4, name: "Screening" },
-    { num: 5, name: "Match Criteria" },
-    { num: 6, name: "Preview & Publish" },
+    { num: 4, name: "Match Criteria" },
+    { num: 5, name: "Preview & Publish" },
   ];
 
   const handleAddResp = () => {
@@ -99,20 +76,6 @@ export default function JobBuilderPage() {
     setNewPrefSkill("");
   };
 
-  const handleAddQuestion = () => {
-    if (!newQuestionText.trim()) return;
-    setScreeningQuestions([
-      ...screeningQuestions,
-      {
-        id: `sq_${Date.now()}`,
-        question: newQuestionText.trim(),
-        type: "text",
-        required: true,
-      },
-    ]);
-    setNewQuestionText("");
-  };
-
   const handlePublish = async () => {
     setIsSubmitting(true);
     const newJob = await createJob({
@@ -128,7 +91,7 @@ export default function JobBuilderPage() {
       responsibilities,
       mustHaveSkills,
       preferredSkills,
-      screeningQuestions: screeningQuestions as any,
+      screeningQuestions: [],
       status: "Published",
     });
     setIsSubmitting(false);
@@ -158,8 +121,8 @@ export default function JobBuilderPage() {
         </div>
       </div>
 
-      {/* 6-Step Horizontal Wizard Stepper */}
-      <div className="grid grid-cols-6 gap-2 p-2 bg-surface rounded-xl border border-border shadow-xs">
+      {/* 5-Step Horizontal Wizard Stepper */}
+      <div className="grid grid-cols-5 gap-2 p-2 bg-surface rounded-xl border border-border shadow-xs">
         {steps.map((s) => {
           const isCurrent = s.num === currentStep;
           const isPassed = s.num < currentStep;
@@ -393,57 +356,13 @@ export default function JobBuilderPage() {
           </Card>
         )}
 
-        {/* STEP 4: SCREENING */}
+        {/* STEP 4: MATCH CRITERIA */}
         {currentStep === 4 && (
-          <Card className="p-6 sm:p-8 bg-surface border-border flex flex-col gap-5">
-            <h2 className="text-base font-bold text-text-primary">Step 4 — Screening Questions</h2>
-            <p className="text-xs text-text-muted">
-              Applicants will answer these during one-click submission. Responses appear in candidate review cards.
-            </p>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newQuestionText}
-                onChange={(e) => setNewQuestionText(e.target.value)}
-                placeholder="Ask a screening question (e.g. Notice period? Experience with design tokens?)"
-                className="flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-text-primary focus:border-primary"
-              />
-              <Button type="button" size="sm" variant="primary" onClick={handleAddQuestion}>
-                Add Question
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-3 pt-2">
-              {screeningQuestions.map((q, idx) => (
-                <div
-                  key={q.id}
-                  className="p-3.5 rounded-lg bg-background border border-border-subtle flex items-start justify-between gap-4 text-xs"
-                >
-                  <div className="flex items-start gap-2.5">
-                    <span className="font-bold text-primary">{idx + 1}.</span>
-                    <span className="text-text-primary font-medium">{q.question}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setScreeningQuestions(screeningQuestions.filter((item) => item.id !== q.id))}
-                    className="text-text-muted hover:text-danger p-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* STEP 5: MATCH CRITERIA */}
-        {currentStep === 5 && (
           <Card className="p-6 sm:p-8 bg-surface border-border flex flex-col gap-6">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
               <h2 className="text-base font-bold text-text-primary">
-                Step 5 — Explainable Match Configuration
+                Step 4 — Explainable Match Configuration
               </h2>
             </div>
             <p className="text-xs text-text-secondary leading-relaxed">
@@ -471,8 +390,8 @@ export default function JobBuilderPage() {
           </Card>
         )}
 
-        {/* STEP 6: PREVIEW & PUBLISH */}
-        {currentStep === 6 && (
+        {/* STEP 5: PREVIEW & PUBLISH */}
+        {currentStep === 5 && (
           <div className="flex flex-col gap-6">
             <div className="p-4 rounded-xl bg-primary-soft/30 border border-primary/20 flex items-center justify-between">
               <span className="text-xs font-semibold text-primary">
@@ -555,13 +474,13 @@ export default function JobBuilderPage() {
           Previous Step
         </Button>
 
-        {currentStep < 6 ? (
+        {currentStep < 5 ? (
           <Button
             type="button"
             variant="primary"
             size="md"
             rightIcon={<ArrowRight className="w-4 h-4" />}
-            onClick={() => setCurrentStep((prev) => Math.min(6, prev + 1))}
+            onClick={() => setCurrentStep((prev) => Math.min(5, prev + 1))}
           >
             Next: {steps[currentStep].name}
           </Button>
