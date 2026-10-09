@@ -32,7 +32,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     const variants = {
       primary:
-        "bg-gradient-to-b from-[#197B69] to-[#12584B] text-white hover:from-[#166E5F] hover:to-[#0D4B40] border border-[#146455] shadow-[0_1px_2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.22)] hover:shadow-[0_4px_16px_-2px_rgba(22,107,92,0.35)] rounded-xl",
+        "bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white border border-[#4338CA] shadow-[0_1px_2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.2)] hover:shadow-[0_4px_16px_-2px_rgba(79,70,229,0.35)] rounded-xl",
       secondary:
         "bg-surface text-text-primary border border-border hover:bg-background hover:border-border-strong hover:text-text-primary shadow-[0_1px_2px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_3px_10px_-2px_rgba(0,0,0,0.06)] rounded-xl",
       outline:
@@ -42,7 +42,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       danger:
         "bg-gradient-to-b from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.2)] border border-red-700 rounded-xl",
       soft:
-        "bg-primary-soft text-primary-dark hover:bg-teal-100/80 border border-primary/20 rounded-xl",
+        "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-xl",
     };
 
     const sizes = {
@@ -104,7 +104,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
 
     const variants = {
       primary:
-        "bg-gradient-to-b from-[#197B69] to-[#12584B] text-white hover:from-[#166E5F] hover:to-[#0D4B40] shadow-[0_1px_2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.22)]",
+        "bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white shadow-[0_1px_2px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.2)]",
       secondary:
         "bg-surface text-text-primary border border-border hover:bg-background hover:border-border-strong shadow-[0_1px_2px_rgba(0,0,0,0.04)]",
       outline:
@@ -114,7 +114,7 @@ export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
       danger:
         "bg-danger-soft text-danger hover:bg-danger hover:text-white",
       soft:
-        "bg-primary-soft text-primary hover:bg-teal-100/80",
+        "bg-blue-50 text-blue-700 hover:bg-blue-100",
     };
 
     const sizes = {

@@ -6,6 +6,7 @@ import { Search, X } from "lucide-react";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
+  labelClassName?: string;
   error?: string;
   helperText?: string;
   leftIcon?: React.ReactNode;
@@ -13,20 +14,20 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, leftIcon, rightIcon, id, ...props }, ref) => {
+  ({ className, label, labelClassName, error, helperText, leftIcon, rightIcon, id, ...props }, ref) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
     return (
       <div className="w-full flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-xs font-semibold text-text-secondary">
+          <label htmlFor={inputId} className={cn("text-xs font-semibold text-slate-700 select-none", labelClassName)}>
             {label}
-            {props.required && <span className="text-danger ml-0.5">*</span>}
+            {props.required && <span className="text-red-500 ml-0.5">*</span>}
           </label>
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <div className="absolute left-3 text-text-muted pointer-events-none flex items-center justify-center">
+            <div className="absolute left-3 text-slate-400 pointer-events-none flex items-center justify-center">
               {leftIcon}
             </div>
           )}
@@ -34,24 +35,24 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             ref={ref}
             className={cn(
-              "w-full rounded-lg bg-surface border border-border px-3.5 py-2 text-sm text-text-primary placeholder:text-text-muted transition-colors duration-150 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:bg-background disabled:text-text-muted disabled:cursor-not-allowed",
-              leftIcon && "pl-10",
-              rightIcon && "pr-10",
-              error && "border-danger focus:border-danger focus:ring-danger/20",
+              "w-full h-10 rounded-lg bg-white border border-slate-200 px-3.5 text-xs font-medium text-slate-900 placeholder:text-slate-400 transition-colors duration-150 focus:border-[#4F46E5] focus:outline-none focus:ring-1 focus:ring-[#4F46E5]/20 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed",
+              leftIcon && "pl-9",
+              rightIcon && "pr-9",
+              error && "border-red-500 focus:border-red-500 focus:ring-red-500/20",
               className
             )}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 text-text-muted flex items-center justify-center">
+            <div className="absolute right-3 text-slate-400 flex items-center justify-center">
               {rightIcon}
             </div>
           )}
         </div>
         {error ? (
-          <p className="text-xs text-danger font-medium mt-0.5">{error}</p>
+          <p className="text-[11px] text-red-600 font-medium mt-0.5">{error}</p>
         ) : helperText ? (
-          <p className="text-xs text-text-muted mt-0.5">{helperText}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">{helperText}</p>
         ) : null}
       </div>
     );

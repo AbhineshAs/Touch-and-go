@@ -143,6 +143,7 @@ export interface IdentityDraft {
   email: string;
   countryCode: string;
   phone: string;
+  password?: string;
   agreeToTerms: boolean;
 }
 

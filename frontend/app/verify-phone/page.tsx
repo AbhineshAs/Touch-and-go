@@ -12,6 +12,7 @@ import {
   Lock,
   ArrowRight,
   Info,
+  Mail,
 } from "lucide-react";
 import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -40,6 +41,8 @@ export default function VerifyPhonePage() {
   const normalizedPhone = identity
     ? `${identity.countryCode}${identity.phone.replace(/\D/g, "")}`
     : "+919876543210";
+
+  const candidateEmail = identity?.email || "candidate@tagjobs.in";
 
   // Ensure active challenge exists
   useEffect(() => {
@@ -179,11 +182,11 @@ export default function VerifyPhonePage() {
       setExpiryCountdown(300);
       inputRefs.current[0]?.focus();
     } else {
-      setErrorMessage("Could not resend code. Please try again or re-enter your phone number.");
+      setErrorMessage("Could not resend code. Please try again or re-enter your email address.");
     }
   };
 
-  const handleEditPhone = () => {
+  const handleEditEmail = () => {
     mockOtpService.invalidateChallenge();
     router.push("/sign-up?role=candidate");
   };
@@ -203,21 +206,21 @@ export default function VerifyPhonePage() {
             <span className="font-bold text-2xl text-text-primary">TAG</span>
           </Link>
           <h1 className="text-xl font-bold tracking-tight text-text-primary mt-2">
-            Verify your phone number
+            Verify your email address
           </h1>
           <p className="text-xs text-text-muted">
             Enter the 6-digit confirmation code sent to{" "}
-            <span className="font-semibold text-text-primary">{normalizedPhone}</span>
+            <span className="font-semibold text-text-primary">{candidateEmail}</span>
           </p>
         </div>
 
         {/* Prototype Demo Banner */}
         <div className="p-3.5 rounded-xl bg-primary-soft/50 border border-primary/20 flex items-start gap-2.5 text-xs text-primary-dark">
-          <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <Mail className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <div className="flex flex-col gap-0.5">
             <span className="font-bold">Demo verification</span>
             <span className="text-[11px] leading-relaxed text-text-secondary">
-              No real SMS is sent and no database account is created. Use test code:{" "}
+              No real email is sent and no database account is created. Use test code:{" "}
               <code className="font-mono font-bold text-primary px-1 py-0.5 rounded bg-surface border border-primary/20">
                 {DEMO_OTP_CODE}
               </code>
@@ -283,11 +286,11 @@ export default function VerifyPhonePage() {
             <div className="flex items-center justify-between text-xs pt-3 border-t border-border-subtle">
               <button
                 type="button"
-                onClick={handleEditPhone}
+                onClick={handleEditEmail}
                 className="inline-flex items-center gap-1.5 text-text-muted hover:text-text-primary transition-colors cursor-pointer"
               >
                 <Edit2 className="w-3.5 h-3.5" />
-                <span>Edit Phone</span>
+                <span>Edit Email</span>
               </button>
 
               <div>

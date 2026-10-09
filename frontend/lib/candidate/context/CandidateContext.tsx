@@ -114,6 +114,7 @@ export interface CandidateContextType {
   resetAll: () => void;
   loadDemoCandidate: (persona: "ananya") => void;
   loginCandidateByPhone: (phone: string) => { exists: boolean; onboardingComplete: boolean };
+  loginCandidateByEmail: (email: string) => { exists: boolean; onboardingComplete: boolean };
 }
 
 const CandidateContext = createContext<CandidateContextType | undefined>(undefined);
@@ -796,6 +797,61 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
     [sessionCandidates, candidateRecord]
   );
 
+  // Sign In Helper for candidate email & password login
+  const loginCandidateByEmail = useCallback(
+    (rawEmail: string) => {
+      const cleanEmail = rawEmail.trim().toLowerCase();
+      const existing = Object.values(sessionCandidates).find(
+        (c) => c.identity.email.trim().toLowerCase() === cleanEmail
+      );
+      if (existing) {
+        setCandidateRecord(existing);
+        setIdentityState(existing.identity);
+        setPhoneVerifiedState(true);
+        syncAuthSession(existing);
+        return {
+          exists: true,
+          onboardingComplete: existing.onboardingComplete,
+        };
+      }
+
+      if (
+        candidateRecord &&
+        candidateRecord.identity.email.trim().toLowerCase() === cleanEmail
+      ) {
+        syncAuthSession(candidateRecord);
+        return {
+          exists: true,
+          onboardingComplete: candidateRecord.onboardingComplete,
+        };
+      }
+
+      if (identity && identity.email.trim().toLowerCase() === cleanEmail) {
+        setPhoneVerifiedState(true);
+        return {
+          exists: true,
+          onboardingComplete: false,
+        };
+      }
+
+      const newIdentity: IdentityDraft = {
+        fullName: cleanEmail.split("@")[0] || "Candidate",
+        email: cleanEmail,
+        countryCode: "+91",
+        phone: "9876543210",
+        agreeToTerms: true,
+      };
+      setIdentityState(newIdentity);
+      setPhoneVerifiedState(true);
+
+      return {
+        exists: false,
+        onboardingComplete: false,
+      };
+    },
+    [sessionCandidates, candidateRecord, identity]
+  );
+
   // Load Demonstration Candidate (Ananya) explicitly when requested
   const loadDemoCandidate = useCallback((persona: "ananya") => {
     if (persona === "ananya") {
@@ -1100,6 +1156,7 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
         resetAll,
         loadDemoCandidate,
         loginCandidateByPhone,
+        loginCandidateByEmail,
       }}
     >
       {children}

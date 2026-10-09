@@ -75,7 +75,7 @@ export function DemoRoleSwitcher() {
                 className={cn(
                   "px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all duration-200 cursor-pointer select-none",
                   isActive
-                    ? "bg-gradient-to-r from-[#197B69] to-[#12584B] text-white shadow-[0_2px_10px_rgba(22,107,92,0.5)] border border-teal-500/40"
+                    ? "bg-[#4F46E5] text-white shadow-[0_2px_10px_rgba(79,70,229,0.5)] border border-indigo-400/40"
                     : "text-slate-400 hover:text-white hover:bg-white/10"
                 )}
               >
