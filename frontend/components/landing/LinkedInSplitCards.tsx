@@ -37,13 +37,13 @@ export function LinkedInSplitCards() {
           {/* Card 2: Employer Job Posting */}
           <div className="bg-white border border-black/15 rounded-2xl p-8 flex flex-col justify-between shadow-xs">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] border border-indigo-200 text-xs font-bold mb-4">
                 <Building2 className="w-3.5 h-3.5" />
                 <span>FOR HIRING MANAGERS</span>
               </div>
 
               <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
-                Post your job for <span className="text-emerald-700">top 5% tech talent</span>
+                Post your job for <span className="text-[#4F46E5]">top 5% tech talent</span>
               </h3>
 
               <p className="text-sm text-slate-600 leading-relaxed mb-6">

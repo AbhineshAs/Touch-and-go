@@ -258,7 +258,7 @@ export default function CandidateDashboardPage() {
               {activeInterviews.length > 0 ? "Upcoming Interview" : "Career Guidance"}
             </span>
             {activeInterviews.length > 0 ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-[#4F46E5] animate-pulse" />
             ) : (
               <Sparkles className="w-4 h-4 text-primary" />
             )}

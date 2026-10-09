@@ -1102,7 +1102,7 @@ export default function CandidateProfilePage() {
       <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-[#4F46E5] flex items-center justify-center">
               <FolderGit2 className="w-4 h-4" />
             </div>
             <h2 className="text-base sm:text-lg font-bold text-slate-900">
@@ -1124,8 +1124,8 @@ export default function CandidateProfilePage() {
             {profile.projects.map((proj) => (
               <div key={proj.id} className="py-5 first:pt-0 last:pb-0 flex items-start justify-between gap-4 group">
                 <div className="flex items-start gap-4 min-w-0">
-                  <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0 shadow-2xs">
-                    <FolderGit2 className="w-5 h-5 text-emerald-600" />
+                  <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-[#4F46E5] flex items-center justify-center font-bold text-base shrink-0 shadow-2xs">
+                    <FolderGit2 className="w-5 h-5 text-[#4F46E5]" />
                   </div>
                   <div className="flex flex-col min-w-0">
                     <h3 className="text-base font-bold text-slate-900">{proj.title}</h3>
@@ -1174,7 +1174,7 @@ export default function CandidateProfilePage() {
           </div>
         ) : (
           <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-8 flex flex-col items-center justify-center text-center">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-[#4F46E5] flex items-center justify-center mb-3">
               <FolderGit2 className="w-6 h-6" />
             </div>
             <p className="text-sm font-semibold text-slate-800">No projects added yet</p>

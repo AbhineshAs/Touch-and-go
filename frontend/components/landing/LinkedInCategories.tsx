@@ -71,7 +71,7 @@ export function LinkedInCategories() {
                   "24-Hour Guaranteed Recruiter Response",
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
-                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-indigo-100 text-[#4F46E5] flex items-center justify-center">
                       <Check className="w-3 h-3" />
                     </div>
                     <span>{item}</span>

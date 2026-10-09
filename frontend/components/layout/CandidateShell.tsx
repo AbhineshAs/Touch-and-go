@@ -144,8 +144,8 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
             {/* Quick Status Pill */}
             <div className="mx-2 px-3 py-2 rounded-xl bg-blue-50/80 border border-blue-200 flex items-center justify-between text-xs">
               <span className="text-[#2563EB] font-bold">Candidate Portal</span>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#4F46E5] bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4F46E5] animate-pulse" />
                 Open to Work
               </span>
             </div>

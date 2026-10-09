@@ -34,7 +34,7 @@ export function Card({
         "rounded-2xl overflow-hidden transition-all duration-200 ease-out",
         variantStyles[variant],
         hoverable &&
-          "hover:border-primary/40 hover:-translate-y-0.75 hover:shadow-[0_12px_28px_-6px_rgba(22,107,92,0.1),0_4px_10px_-2px_rgba(15,23,42,0.04)] cursor-pointer",
+          "hover:border-primary/40 hover:-translate-y-0.75 hover:shadow-[0_12px_28px_-6px_rgba(79,70,229,0.1),0_4px_10px_-2px_rgba(15,23,42,0.04)] cursor-pointer",
         className
       )}
       {...props}
@@ -139,7 +139,7 @@ export function MetricCard({
   className,
 }: MetricCardProps) {
   const changeColors = {
-    positive: "text-emerald-800 bg-emerald-50 border-emerald-200/80",
+    positive: "text-[#4F46E5] bg-[#EEF2FF] border border-[#4F46E5]/30 font-semibold",
     negative: "text-rose-800 bg-rose-50 border-rose-200/80",
     neutral: "text-text-secondary bg-background-alt border-border",
   };

@@ -58,10 +58,10 @@ export function ProductBentoGrid() {
               </div>
               <div className="flex items-center justify-between pt-1">
                 <span>CTC Expectation Alignment</span>
-                <span className="text-emerald-600 font-mono">100% Fit</span>
+                <span className="text-[#4F46E5] font-mono">100% Fit</span>
               </div>
               <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-600" style={{ width: "100%" }} />
+                <div className="h-full bg-[#4F46E5]" style={{ width: "100%" }} />
               </div>
             </div>
           </div>
@@ -88,18 +88,18 @@ export function ProductBentoGrid() {
           {/* Bento Card 3: Privacy Control */}
           <div className="bento-card p-6 sm:p-8 flex flex-col justify-between group">
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold shadow-2xs mb-6 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-[#4F46E5] flex items-center justify-center font-bold shadow-2xs mb-6 group-hover:scale-110 transition-transform">
                 <Lock className="w-6 h-6" />
               </div>
-              <span className="text-xs font-mono font-bold text-emerald-600 uppercase tracking-wider">Candidate Security</span>
+              <span className="text-xs font-mono font-bold text-[#4F46E5] uppercase tracking-wider">Candidate Security</span>
               <h3 className="text-xl font-black text-slate-900 mt-1 mb-2">Stealth Mode</h3>
               <p className="text-slate-600 text-xs font-medium leading-relaxed mb-4">
                 Block your existing employer and hide personal contact details until you explicitly accept a recruiter request.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-900 bg-emerald-50/60 p-3 rounded-xl border border-emerald-200">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-900 bg-indigo-50/60 p-3 rounded-xl border border-indigo-200">
+              <ShieldCheck className="w-4 h-4 text-[#4F46E5]" />
               <span>Current Company Auto-Blocked</span>
             </div>
           </div>

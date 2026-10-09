@@ -23,8 +23,8 @@ export function LandingCtaBanner() {
             {/* Live Status Pill Badge */}
             <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-indigo-500/15 border border-indigo-400/30 text-xs font-bold text-sky-300 mb-8 backdrop-blur-md shadow-inner">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#818CF8] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4F46E5]" />
               </span>
               <Sparkles className="w-3.5 h-3.5 text-sky-400" />
               <span className="tracking-wide uppercase">Join The Touch &amp; Go Recruitment Revolution</span>
@@ -70,7 +70,7 @@ export function LandingCtaBanner() {
                 <span>1-Touch Instant Apply</span>
               </div>
               <div className="flex items-center justify-center gap-2.5 py-2 px-3 rounded-xl bg-white/[0.04] border border-white/10 text-xs font-semibold text-slate-200 backdrop-blur-xs">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <ShieldCheck className="w-4 h-4 text-[#818CF8] shrink-0" />
                 <span>100% Verified Employers</span>
               </div>
               <div className="flex items-center justify-center gap-2.5 py-2 px-3 rounded-xl bg-white/[0.04] border border-white/10 text-xs font-semibold text-slate-200 backdrop-blur-xs">

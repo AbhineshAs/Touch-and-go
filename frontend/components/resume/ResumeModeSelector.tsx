@@ -59,15 +59,15 @@ export function ResumeModeSelector({
 
             <ul className="flex flex-col gap-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
                 <span>Single & two-column ATS-tested layouts</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
                 <span>Live preview & 1-click printable PDF</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
                 <span>Syncs directly with your candidate profile</span>
               </li>
             </ul>
@@ -107,15 +107,15 @@ export function ResumeModeSelector({
 
             <ul className="flex flex-col gap-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
                 <span>Instant 0–100 ATS compatibility grade</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
                 <span>Role keyword & skill gap diagnosis</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4F46E5] shrink-0" />
                 <span>Actionable rewrite recommendations</span>
               </li>
             </ul>

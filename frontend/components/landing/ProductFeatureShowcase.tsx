@@ -94,7 +94,7 @@ export function ProductFeatureShowcase() {
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
               }`}
             >
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <ShieldCheck className="w-4 h-4 text-[#4F46E5]" />
               <span>Privacy &amp; Salary Benchmarks</span>
             </button>
 
@@ -151,10 +151,10 @@ export function ProductFeatureShowcase() {
                 <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col gap-2">
                   <div className="flex justify-between items-center text-xs font-bold">
                     <span className="text-slate-700 flex items-center gap-1.5">
-                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                      <TrendingUp className="w-3.5 h-3.5 text-[#4F46E5]" />
                       Target CTC Expectation (India Hubs)
                     </span>
-                    <span className="text-emerald-700 font-mono font-extrabold">₹{ctcExpectation} LPA</span>
+                    <span className="text-[#4F46E5] font-mono font-extrabold">₹{ctcExpectation} LPA</span>
                   </div>
                   <input
                     type="range"
@@ -162,7 +162,7 @@ export function ProductFeatureShowcase() {
                     max="60"
                     value={ctcExpectation}
                     onChange={(e) => setCtcExpectation(Number(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#4F46E5]"
                   />
                 </div>
 
@@ -204,8 +204,8 @@ export function ProductFeatureShowcase() {
                 <div>
                   <div className="flex items-center justify-between mb-6">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Match Score Breakdown</span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[11px] font-bold">
+                      <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
                       Live AI Calculated
                     </span>
                   </div>
@@ -235,10 +235,10 @@ export function ProductFeatureShowcase() {
                     <div>
                       <div className="flex justify-between text-slate-400 mb-1 font-semibold">
                         <span>Salary Benchmark Fit</span>
-                        <span className="text-emerald-400 font-bold">{ctcExpectation <= 35 ? "100% Market Match" : "88% Stretch"}</span>
+                        <span className="text-indigo-300 font-bold">{ctcExpectation <= 35 ? "100% Market Match" : "88% Stretch"}</span>
                       </div>
                       <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: ctcExpectation <= 35 ? "100%" : "88%" }} />
+                        <div className="h-full bg-[#4F46E5] transition-all duration-300" style={{ width: ctcExpectation <= 35 ? "100%" : "88%" }} />
                       </div>
                     </div>
                   </div>
@@ -265,8 +265,8 @@ export function ProductFeatureShowcase() {
                 <h3 className="text-xl font-extrabold text-white mt-1">Real-time candidate profile &amp; hiring analytics view</h3>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
                   <span>Full Match Transparency</span>
                 </span>
               </div>
@@ -283,7 +283,7 @@ export function ProductFeatureShowcase() {
 
               <div className="absolute bottom-6 left-6 right-6 flex flex-wrap items-center justify-between gap-4 pointer-events-auto">
                 <div className="bg-slate-900/90 backdrop-blur-md p-3 px-4 rounded-xl border border-slate-700/80 text-xs font-bold text-white flex items-center gap-3">
-                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping" />
                   <span>Interactive Talent Dashboard View</span>
                 </div>
                 <Link
@@ -303,7 +303,7 @@ export function ProductFeatureShowcase() {
           <div className="bento-card p-6 sm:p-8 lg:p-10 border border-slate-200/90 shadow-xl bg-white">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center font-bold shadow-xs mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 text-[#4F46E5] flex items-center justify-center font-bold shadow-xs mb-4">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
                 <h3 className="text-2xl font-black text-slate-900 mb-3">Anonymous Candidate Privacy Control</h3>
@@ -313,7 +313,7 @@ export function ProductFeatureShowcase() {
 
                 <div className="space-y-4 text-xs font-bold text-slate-800">
                   <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
-                    <EyeOff className="w-5 h-5 text-emerald-600 shrink-0" />
+                    <EyeOff className="w-5 h-5 text-[#4F46E5] shrink-0" />
                     <span>Auto-block your current company domain from viewing profile</span>
                   </div>
                   <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80">
@@ -330,7 +330,7 @@ export function ProductFeatureShowcase() {
               <div className="bg-slate-900 text-white p-6 rounded-3xl border border-slate-800 shadow-xl flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                   <span className="text-xs font-bold uppercase text-slate-400">Bengaluru Senior Full-Stack CTC Distribution</span>
-                  <span className="text-[11px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">95th Percentile</span>
+                  <span className="text-[11px] font-mono font-bold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded">95th Percentile</span>
                 </div>
 
                 {/* Salary Bars */}
@@ -348,10 +348,10 @@ export function ProductFeatureShowcase() {
                   <div>
                     <div className="flex justify-between text-slate-400 mb-1 font-semibold">
                       <span>Touch And Go Verified Matches</span>
-                      <span className="text-emerald-400 font-extrabold">₹34 - ₹42 LPA</span>
+                      <span className="text-indigo-300 font-extrabold">₹34 - ₹42 LPA</span>
                     </div>
                     <div className="w-full h-3 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-blue-500 to-emerald-400" style={{ width: "90%" }} />
+                      <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: "90%" }} />
                     </div>
                   </div>
                 </div>
@@ -387,7 +387,7 @@ export function ProductFeatureShowcase() {
                     <span>Direct chat &amp; 1-click interview scheduling</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <ShieldCheck className="w-4 h-4 text-[#4F46E5] shrink-0" />
                     <span>Verified corporate domain onboarding for employers</span>
                   </div>
                 </div>
@@ -435,7 +435,7 @@ export function ProductFeatureShowcase() {
                       <div className="text-[11px] text-slate-500 font-medium">6 yrs exp • Python, LLMs, RAG</div>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-mono font-bold text-xs border border-emerald-200">
+                  <span className="px-2.5 py-1 rounded-full bg-indigo-50 text-[#4F46E5] font-mono font-bold text-xs border border-indigo-200">
                     95% Match
                   </span>
                 </div>

@@ -60,7 +60,7 @@ export function ATSScoreReport({ report, onReset, className }: ATSScoreReportPro
 
   const scoreColor =
     report.overallScore >= 80
-      ? "text-emerald-600 border-emerald-500"
+      ? "text-[#4F46E5] border-[#4F46E5]"
       : report.overallScore >= 65
         ? "text-indigo-600 border-indigo-500"
         : "text-amber-600 border-amber-500";
@@ -192,7 +192,7 @@ export function ATSScoreReport({ report, onReset, className }: ATSScoreReportPro
                     <span className="text-slate-400 font-medium line-through">
                       &quot;{rw.original}&quot;
                     </span>
-                    <span className="text-emerald-700 font-semibold bg-emerald-50/80 p-2 rounded-lg border border-emerald-150">
+                    <span className="text-[#4F46E5] font-semibold bg-[#EEF2FF] p-2 rounded-lg border border-indigo-200">
                       &quot;{rw.improved}&quot;
                     </span>
                   </div>
@@ -208,8 +208,8 @@ export function ATSScoreReport({ report, onReset, className }: ATSScoreReportPro
                     >
                       {copiedIndex === idx ? (
                         <>
-                          <Check className="w-3 h-3 text-emerald-600" />
-                          <span className="text-emerald-600">Copied!</span>
+                          <Check className="w-3 h-3 text-[#4F46E5]" />
+                          <span className="text-[#4F46E5]">Copied!</span>
                         </>
                       ) : (
                         <>
@@ -311,7 +311,7 @@ function SectionBreakdownItem({
 }) {
   const statusColor =
     status === "good"
-      ? "bg-emerald-500"
+      ? "bg-[#4F46E5]"
       : status === "warning"
         ? "bg-amber-500"
         : "bg-red-500";

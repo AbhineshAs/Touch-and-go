@@ -59,7 +59,7 @@ export function MatchScore({
       )}
     >
       {/* Ambient background glow */}
-      <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Alignment Header with Precision Circular Gauge */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-border-subtle relative">
@@ -69,15 +69,15 @@ export function MatchScore({
             <svg className="w-20 h-20 transform -rotate-90" viewBox="0 0 96 96">
               <defs>
                 <linearGradient id="scoreTealGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#197B69" />
-                  <stop offset="100%" stopColor="#0E4F45" />
+                  <stop offset="0%" stopColor="#6366F1" />
+                  <stop offset="100%" stopColor="#4F46E5" />
                 </linearGradient>
               </defs>
               <circle
                 cx="48"
                 cy="48"
                 r={radius}
-                className="stroke-teal-900/10"
+                className="stroke-indigo-900/10"
                 strokeWidth="7"
                 fill="transparent"
               />
@@ -160,7 +160,7 @@ export function MatchScore({
                   {/* Progress Bar */}
                   <div className="w-full h-2 rounded-full bg-border/80 overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-teal-600 to-emerald-500 rounded-full transition-all duration-700 ease-out"
+                      className="h-full bg-gradient-to-r from-indigo-500 to-[#4F46E5] rounded-full transition-all duration-700 ease-out"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>

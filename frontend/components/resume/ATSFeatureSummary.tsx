@@ -13,9 +13,9 @@ export function ATSFeatureSummary({ className }: ATSFeatureSummaryProps) {
     {
       title: "Overall ATS-style score and grade",
       description: "Get a clear 0–100 benchmark metric calibrated against standard enterprise ATS algorithms.",
-      icon: <Award className="w-4 h-4 text-emerald-600" />,
-      color: "bg-emerald-50 text-emerald-600 border-emerald-200",
-      bulletColor: "bg-emerald-500",
+      icon: <Award className="w-4 h-4 text-[#4F46E5]" />,
+      color: "bg-indigo-50 text-[#4F46E5] border-indigo-200",
+      bulletColor: "bg-[#4F46E5]",
     },
     {
       title: "Section-by-section scoring breakdown",

@@ -1103,7 +1103,7 @@ function AuthContent() {
               {/* STEP 4: SUCCESS */}
               {forgotStep === "success" && (
                 <div className="py-2 text-center flex flex-col items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-full bg-indigo-50 text-[#4F46E5] flex items-center justify-center">
                     <CheckCircle2 className="w-6 h-6" />
                   </div>
                   <div className="flex flex-col gap-1">

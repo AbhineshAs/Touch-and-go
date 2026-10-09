@@ -61,15 +61,15 @@ export function MatchEvidence({
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       {/* 1. MATCHED SECTION */}
-      <div className="rounded-2xl border border-emerald-200/80 bg-surface p-6 shadow-[0_2px_12px_-4px_rgba(22,107,92,0.06)] flex flex-col gap-4">
-        <div className="flex items-center justify-between pb-3 border-b border-emerald-100">
-          <div className="flex items-center gap-2.5 text-emerald-800 font-bold text-sm">
-            <span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-4 h-4 text-emerald-700" />
+      <div className="rounded-2xl border border-indigo-200/80 bg-surface p-6 shadow-[0_2px_12px_-4px_rgba(79,70,229,0.06)] flex flex-col gap-4">
+        <div className="flex items-center justify-between pb-3 border-b border-indigo-100">
+          <div className="flex items-center gap-2.5 text-indigo-900 font-bold text-sm">
+            <span className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4 text-[#4F46E5]" />
             </span>
             <span>MATCHED CRITERIA ({matched.length})</span>
           </div>
-          <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-full">
+          <span className="text-[11px] font-semibold text-[#4F46E5] bg-[#EEF2FF] border border-indigo-200/80 px-2.5 py-0.5 rounded-full">
             Verified Citations
           </span>
         </div>
@@ -78,11 +78,11 @@ export function MatchEvidence({
           {matched.map((item, idx) => (
             <div
               key={idx}
-              className="p-4 rounded-xl bg-gradient-to-br from-emerald-50/50 to-teal-50/20 border border-emerald-200/50 flex flex-col gap-2 hover:border-emerald-300 transition-colors"
+              className="p-4 rounded-xl bg-gradient-to-br from-indigo-50/50 to-[#EEF2FF]/40 border border-indigo-200/50 flex flex-col gap-2 hover:border-indigo-300 transition-colors"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-bold text-xs text-text-primary">{item.criterion}</span>
-                <span className="text-[10px] uppercase font-extrabold text-emerald-800 tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 shrink-0">
+                <span className="text-[10px] uppercase font-extrabold text-[#4F46E5] tracking-wider px-2 py-0.5 rounded-full bg-indigo-100 shrink-0">
                   Verified
                 </span>
               </div>
@@ -191,7 +191,7 @@ export function MatchEvidence({
                 variant="secondary"
                 size="sm"
                 onClick={() => handleFeedback(true)}
-                leftIcon={<ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />}
+                leftIcon={<ThumbsUp className="w-3.5 h-3.5 text-[#4F46E5]" />}
               >
                 Relevant
               </Button>

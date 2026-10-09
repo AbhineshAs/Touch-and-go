@@ -153,7 +153,7 @@ export default function JobBuilderPage() {
         </div>
 
         <div className="text-xs text-text-muted flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span className="w-2 h-2 rounded-full bg-[#4F46E5]" />
           <span>{autosaveStatus}</span>
         </div>
       </div>

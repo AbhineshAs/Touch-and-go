@@ -77,7 +77,7 @@ export default function AdminAnalyticsPage() {
                   fontSize: "12px",
                 }}
               />
-              <Bar dataKey="candidates" fill="#166B5C" radius={[4, 4, 0, 0]} name="Verified Candidates" />
+              <Bar dataKey="candidates" fill="#4F46E5" radius={[4, 4, 0, 0]} name="Verified Candidates" />
             </BarChart>
           </ResponsiveContainer>
         </div>

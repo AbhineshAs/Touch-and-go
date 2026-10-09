@@ -143,7 +143,7 @@ export default function EmployerDashboardPage() {
                 <XAxis dataKey="stage" tick={{ fontSize: 11, fill: "#475467" }} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#475467" }} axisLine={false} />
                 <Tooltip
-                  cursor={{ fill: "rgba(22, 107, 92, 0.05)" }}
+                  cursor={{ fill: "rgba(79, 70, 229, 0.08)" }}
                   contentStyle={{
                     backgroundColor: "#FFFFFF",
                     borderRadius: "8px",
@@ -151,7 +151,7 @@ export default function EmployerDashboardPage() {
                     fontSize: "12px",
                   }}
                 />
-                <Bar dataKey="count" fill="#166B5C" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                <Bar dataKey="count" fill="#4F46E5" radius={[4, 4, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           </div>

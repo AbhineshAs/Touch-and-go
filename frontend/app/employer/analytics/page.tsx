@@ -27,7 +27,7 @@ const MONTHLY_APPLICATIONS = [
 ];
 
 const SOURCE_DATA = [
-  { name: "Direct TAG Match", value: 62, color: "#166B5C" },
+  { name: "Direct TAG Match", value: 62, color: "#4F46E5" },
   { name: "Company Public Page", value: 24, color: "#2563EB" },
   { name: "Referrals", value: 14, color: "#D97706" },
 ];
@@ -111,7 +111,7 @@ export default function EmployerAnalyticsPage() {
                   type="monotone"
                   dataKey="qualified"
                   name="Qualified (>75% Match)"
-                  stroke="#166B5C"
+                  stroke="#4F46E5"
                   strokeWidth={2.5}
                   dot={{ r: 4 }}
                 />

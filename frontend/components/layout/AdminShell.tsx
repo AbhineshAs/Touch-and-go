@@ -99,12 +99,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* System Health Mini Indicator */}
-            <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+            <div className="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-200 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-emerald-700 animate-pulse" />
-                <span className="font-bold text-emerald-950">Marketplace SLA</span>
+                <Activity className="w-4 h-4 text-[#4F46E5] animate-pulse" />
+                <span className="font-bold text-indigo-950">Marketplace SLA</span>
               </div>
-              <span className="text-[11px] font-extrabold text-emerald-800 bg-white px-2 py-0.5 rounded-full border border-emerald-200">
+              <span className="text-[11px] font-extrabold text-[#4F46E5] bg-white px-2 py-0.5 rounded-full border border-indigo-200">
                 99.98%
               </span>
             </div>

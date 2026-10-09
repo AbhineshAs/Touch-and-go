@@ -16,7 +16,7 @@ export function Badge({ className, variant = "default", size = "sm", children, .
     default: "bg-primary-soft text-primary-dark border border-primary/20",
     secondary: "bg-background-alt text-text-secondary border border-border/80",
     outline: "bg-transparent text-text-secondary border border-border",
-    success: "bg-emerald-50 text-emerald-800 border border-emerald-200/80",
+    success: "bg-[#EEF2FF] text-[#4F46E5] border border-[#4F46E5]/30",
     warning: "bg-amber-50 text-amber-900 border border-amber-200/80",
     danger: "bg-rose-50 text-rose-800 border border-rose-200/80",
     info: "bg-sky-50 text-sky-800 border border-sky-200/80",
@@ -57,7 +57,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     s.includes("decision")
   ) {
     variant = "success";
-    dotColor = "bg-emerald-600";
+    dotColor = "bg-[#4F46E5]";
     hasPulse = true;
   } else if (
     s.includes("pending") ||
@@ -143,7 +143,7 @@ export function MatchBadge({ score, size = "md", className }: MatchBadgeProps) {
   const isMid = score >= 50 && score < 75;
 
   const bg = isHigh
-    ? "bg-gradient-to-r from-emerald-50 to-teal-50/80 text-[#0E4F45] border-teal-200/90 shadow-[0_1px_3px_rgba(22,107,92,0.08)]"
+    ? "bg-gradient-to-r from-indigo-50 to-[#EEF2FF] text-[#4F46E5] border-indigo-200/90 shadow-[0_1px_3px_rgba(79,70,229,0.08)]"
     : isMid
     ? "bg-amber-50 text-amber-900 border-amber-200"
     : "bg-slate-100 text-slate-700 border-slate-200";

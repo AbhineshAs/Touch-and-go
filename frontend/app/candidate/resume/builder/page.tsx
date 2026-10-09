@@ -255,7 +255,7 @@ export default function ResumeBuilderEditorPage() {
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
                   ATS Resume Builder
                 </h1>
-                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                <span className="text-[11px] font-bold text-[#4F46E5] bg-[#EEF2FF] px-2.5 py-0.5 rounded-full border border-indigo-200">
                   ATS-Clean Template
                 </span>
               </div>
@@ -303,8 +303,8 @@ export default function ResumeBuilderEditorPage() {
             >
               {isSaved ? (
                 <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-700 font-bold">Saved!</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#4F46E5]" />
+                  <span className="text-[#4F46E5] font-bold">Saved!</span>
                 </>
               ) : (
                 <>

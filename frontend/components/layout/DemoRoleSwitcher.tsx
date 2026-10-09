@@ -57,8 +57,8 @@ export function DemoRoleSwitcher() {
         {/* Pulsing Live Dot */}
         <div className="flex items-center gap-2 pl-3 pr-2 py-1 text-[11px] font-bold tracking-wider text-slate-300 border-r border-slate-800">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#818CF8] opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4F46E5]" />
           </span>
           <span className="hidden sm:inline">DEMO PERSONA</span>
         </div>

@@ -26,8 +26,8 @@ export function ProductMetrics() {
       label: "Match Accuracy",
       subLabel: "Explainable multi-vector AI scoring",
       icon: Target,
-      color: "text-emerald-600",
-      bg: "bg-emerald-50 border-emerald-200",
+      color: "text-[#4F46E5]",
+      bg: "bg-indigo-50 border-indigo-200",
     },
     {
       value: "₹34.2 LPA",
@@ -54,7 +54,7 @@ export function ProductMetrics() {
                   <div className={`w-12 h-12 rounded-2xl ${m.bg} border flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform`}>
                     <Icon className={`w-6 h-6 ${m.color}`} />
                   </div>
-                  <CheckCircle2 className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                  <CheckCircle2 className="w-4 h-4 text-slate-500 group-hover:text-indigo-400 transition-colors" />
                 </div>
 
                 <div>
@@ -73,11 +73,11 @@ export function ProductMetrics() {
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           <div className="flex items-center gap-2 font-bold text-slate-300">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#818CF8] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#4F46E5]" />
             </span>
             <span>LIVE MATCH STREAM:</span>
-            <span className="text-emerald-400 font-mono">Senior React Lead matched with Techcy Routes • ₹38 LPA</span>
+            <span className="text-indigo-400 font-mono">Senior React Lead matched with Techcy Routes • ₹38 LPA</span>
           </div>
           <div className="flex items-center gap-2 text-slate-400 font-semibold">
             <ShieldCheck className="w-4 h-4 text-blue-400" />
