@@ -11,7 +11,9 @@ import {
   Loader2,
   FileCode,
   Briefcase,
+  Check,
 } from "lucide-react";
+import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { cn } from "@/lib/utils";
 
 export interface ATSAnalysisPayload {
@@ -33,7 +35,9 @@ export function ATSResumeUploader({
   isAnalyzing,
   className,
 }: ATSResumeUploaderProps) {
+  const { uploadedResume, uploadResume, replaceResume } = useCandidate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [usingActiveResume, setUsingActiveResume] = useState(false);
   const [pastedText, setPastedText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [showJobDescInput, setShowJobDescInput] = useState(false);
@@ -61,6 +65,30 @@ export function ATSResumeUploader({
     }
 
     setSelectedFile(file);
+    setUsingActiveResume(false);
+
+    // Persist as candidate's active resume
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === "string" ? reader.result : undefined;
+        const payload = {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type || "application/octet-stream",
+          dataUrl,
+          extractedText: `Parsed document contents for ${file.name}. Full sections identified: Personal Information, Executive Summary, Technical Skills, Professional Experience, Education and Certifications.`,
+        };
+        if (uploadedResume) {
+          replaceResume(payload);
+        } else {
+          uploadResume(payload);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (e) {
+      console.warn("Could not persist uploaded file to storage:", e);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -93,6 +121,7 @@ export function ATSResumeUploader({
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+    setUsingActiveResume(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -100,6 +129,18 @@ export function ATSResumeUploader({
 
   const handleSubmitAnalysis = async () => {
     setValidationError(null);
+
+    // If using the candidate's active stored resume
+    if (usingActiveResume && uploadedResume) {
+      onAnalyze({
+        sourceType: "file",
+        fileName: uploadedResume.fileName,
+        fileSize: uploadedResume.fileSize,
+        text: uploadedResume.extractedText || `Parsed document contents for ${uploadedResume.fileName}`,
+        targetJobDescription: jobDescription.trim() || undefined,
+      });
+      return;
+    }
 
     if (!selectedFile && !pastedText.trim()) {
       setValidationError("Please choose a resume file or paste your resume text to begin analysis.");
@@ -153,8 +194,59 @@ export function ATSResumeUploader({
         </div>
       )}
 
+      {/* Active Resume Available Card */}
+      {uploadedResume && !selectedFile && (
+        <div
+          className={cn(
+            "p-4 rounded-xl border transition-all flex items-center justify-between gap-3",
+            usingActiveResume
+              ? "border-[#4F46E5] bg-indigo-50/80 shadow-xs"
+              : "border-slate-200 bg-slate-50/70 hover:bg-slate-50"
+          )}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#4F46E5] text-white flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                  {uploadedResume.fileName}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Active Resume
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500">
+                {(uploadedResume.fileSize / (1024 * 1024)).toFixed(2)} MB • Stored on candidate profile
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setUsingActiveResume(!usingActiveResume)}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors shrink-0 flex items-center gap-1.5",
+              usingActiveResume
+                ? "bg-[#4F46E5] text-white shadow-xs"
+                : "bg-white border border-slate-200 text-slate-700 hover:border-indigo-300"
+            )}
+          >
+            {usingActiveResume ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Selected</span>
+              </>
+            ) : (
+              <span>Use This CV</span>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Drag & Drop Zone */}
-      {!selectedFile ? (
+      {!selectedFile && !usingActiveResume ? (
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -203,7 +295,7 @@ export function ATSResumeUploader({
             Tip: If PDF extraction returns empty text on your server, upload DOCX or paste resume text below.
           </p>
         </div>
-      ) : (
+      ) : selectedFile ? (
         /* Selected File Card */
         <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -228,7 +320,32 @@ export function ATSResumeUploader({
             <X className="w-4 h-4" />
           </button>
         </div>
-      )}
+      ) : usingActiveResume && uploadedResume ? (
+        /* Active Resume Selected Card */
+        <div className="p-4 rounded-xl border border-indigo-300 bg-indigo-50/60 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-lg bg-[#4F46E5] text-white flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-slate-900 truncate max-w-xs sm:max-w-md">
+                {uploadedResume.fileName}
+              </span>
+              <span className="text-[11px] text-slate-500">
+                {(uploadedResume.fileSize / (1024 * 1024)).toFixed(2)} MB • Ready to analyze
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleRemoveFile}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-white transition-colors cursor-pointer"
+            aria-label="Remove selected file"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      ) : null}
 
       {/* Fallback Text Input: Or Paste Resume Text */}
       <div className="flex flex-col gap-2">
@@ -287,10 +404,10 @@ export function ATSResumeUploader({
       <button
         type="button"
         onClick={handleSubmitAnalysis}
-        disabled={isAnalyzing || (!selectedFile && !pastedText.trim())}
+        disabled={isAnalyzing || (!selectedFile && !pastedText.trim() && !(usingActiveResume && uploadedResume))}
         className={cn(
           "w-full h-11.5 rounded-xl font-bold text-xs shadow-xs flex items-center justify-center gap-2 transition-all cursor-pointer",
-          isAnalyzing || (!selectedFile && !pastedText.trim())
+          isAnalyzing || (!selectedFile && !pastedText.trim() && !(usingActiveResume && uploadedResume))
             ? "bg-slate-200 text-slate-400 cursor-not-allowed"
             : "bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white hover:shadow-[0_4px_16px_-2px_rgba(79,70,229,0.35)]"
         )}
@@ -303,7 +420,11 @@ export function ATSResumeUploader({
         ) : (
           <>
             <Sparkles className="w-4 h-4" />
-            <span>Run ATS Scan &amp; Score</span>
+            <span>
+              {usingActiveResume && uploadedResume
+                ? `Run ATS Scan on Active Resume (${uploadedResume.fileName})`
+                : "Run ATS Scan & Score"}
+            </span>
           </>
         )}
       </button>

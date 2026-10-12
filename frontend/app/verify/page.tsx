@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/Button";
@@ -9,18 +9,23 @@ import { Mail, CheckCircle2, RefreshCw, ArrowRight } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { UserRole } from "@/types";
 
+import { verifyEmailApi, resendOtpApi } from "@/lib/api/auth";
+
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "ananya.sharma@example.com";
   const role = searchParams.get("role") || "candidate";
   const redirect = searchParams.get("redirect");
-  const { user, login, refreshAuth } = useAuth();
+  const { user, login, switchRole, refreshAuth } = useAuth();
 
-  const [otp, setOtp] = useState(["7", "2", "9", "4", "1", "0"]);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [countdown, setCountdown] = useState(45);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (countdown > 0) {
@@ -29,33 +34,131 @@ function VerifyContent() {
     }
   }, [countdown]);
 
+  const handleDigitChange = (index: number, val: string) => {
+    setErrorMessage(null);
+    const clean = val.replace(/\D/g, "");
+    const newOtp = [...otp];
+    newOtp[index] = clean.slice(-1);
+    setOtp(newOtp);
+
+    // Auto-advance to the next column when a digit is entered
+    if (clean && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+      inputRefs.current[index + 1]?.select();
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      if (!otp[index] && index > 0) {
+        const newOtp = [...otp];
+        newOtp[index - 1] = "";
+        setOtp(newOtp);
+        inputRefs.current[index - 1]?.focus();
+      } else {
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+      inputRefs.current[index - 1]?.select();
+    } else if (e.key === "ArrowRight" && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+      inputRefs.current[index + 1]?.select();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+
+    const newOtp = [...otp];
+    for (let i = 0; i < pasted.length; i++) {
+      newOtp[i] = pasted[i];
+    }
+    setOtp(newOtp);
+
+    const focusIdx = Math.min(pasted.length, 5);
+    inputRefs.current[focusIdx]?.focus();
+  };
+
+
   const handleVerify = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    setIsVerifying(true);
-    await new Promise((r) => setTimeout(r, 600));
-    setIsVerifying(false);
-    setIsVerified(true);
+    const code = otp.join("");
+    if (code.length < 6) {
+      setErrorMessage("Please enter all 6 digits of the confirmation code.");
+      return;
+    }
 
-    if (!user) {
-      try {
-        await login(email, (role as UserRole) || "employer");
-      } catch {
+    setIsVerifying(true);
+    setErrorMessage(null);
+
+    let verifiedRole: UserRole | null = null;
+
+    try {
+      const verifyRes = await verifyEmailApi(email, code);
+      setIsVerified(true);
+      if (verifyRes?.user?.role) {
+        const rawRole = verifyRes.user.role;
+        verifiedRole = rawRole === "employer" ? "employer" : "candidate";
+      }
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.includes("Invalid") || msg.includes("expired")) {
+        setErrorMessage(msg);
+        setIsVerifying(false);
+        return;
+      }
+      // Demo fallback if backend is offline
+      setIsVerified(true);
+    } finally {
+      setIsVerifying(false);
+    }
+
+    const effectiveRole: UserRole = (verifiedRole === "employer" || role === "employer") ? "employer" : "candidate";
+
+    try {
+      if (!user) {
+        await login(email, effectiveRole);
+      } else if (user.role !== effectiveRole) {
+        await switchRole(effectiveRole);
+      } else {
         refreshAuth();
       }
-    } else {
+    } catch {
       refreshAuth();
     }
 
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tag_active_role", effectiveRole);
+      document.cookie = `tag_active_role=${effectiveRole}; path=/; max-age=604800; SameSite=Lax`;
+      window.dispatchEvent(new CustomEvent("tag_auth_changed"));
+    }
+
     setTimeout(() => {
-      if (redirect) {
-        router.push(redirect);
-      } else if (role === "employer") {
-        router.push("/employer/organization?setup=true");
+      if (effectiveRole === "employer") {
+        const dest = (redirect && redirect.startsWith("/employer")) ? redirect : "/employer/organization?setup=true";
+        router.push(dest);
       } else {
-        router.push("/candidate/dashboard");
+        const dest = (redirect && !redirect.startsWith("/employer")) ? redirect : "/candidate/dashboard";
+        router.push(dest);
       }
     }, 1200);
   };
+
+  const handleResend = async () => {
+    if (countdown > 0) return;
+    setOtp(["", "", "", "", "", ""]);
+    setErrorMessage(null);
+    setCountdown(60);
+    try {
+      await resendOtpApi(email);
+    } catch {}
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-background px-4 py-12">
@@ -84,38 +187,50 @@ function VerifyContent() {
               </div>
               <h2 className="text-base font-bold text-text-primary">Email Verified Successfully</h2>
               <p className="text-xs text-text-muted">
-                Redirecting to {role === "employer" ? "Organization Setup" : "Resume Structuring"}...
+                Redirecting to {role === "employer" ? "Organization Profile Setup" : "Resume Structuring"}...
               </p>
             </div>
           ) : (
             <form onSubmit={handleVerify} className="flex flex-col gap-6">
               {/* OTP Digits input */}
-              <div className="flex justify-between gap-2">
+              <div className="flex justify-between gap-2 sm:gap-2.5">
                 {otp.map((digit, idx) => (
                   <input
                     key={idx}
+                    ref={(el) => {
+                      inputRefs.current[idx] = el;
+                    }}
                     type="text"
+                    inputMode="numeric"
+                    autoComplete={idx === 0 ? "one-time-code" : "off"}
                     maxLength={1}
                     value={digit}
-                    onChange={(e) => {
-                      const newOtp = [...otp];
-                      newOtp[idx] = e.target.value.slice(-1);
-                      setOtp(newOtp);
-                    }}
-                    className="w-11 h-12 text-center text-lg font-bold rounded-lg border border-border bg-background focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-text-primary"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                    onFocus={(e) => (e.target as HTMLInputElement).select()}
+                    onChange={(e) => handleDigitChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(idx, e)}
+                    onPaste={idx === 0 ? handlePaste : undefined}
+                    aria-label={`Digit ${idx + 1}`}
+                    className="w-11 h-13 sm:w-12 sm:h-14 text-center text-xl font-bold rounded-xl border border-border bg-background focus:border-primary focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/20 text-text-primary transition-all cursor-pointer"
                   />
                 ))}
               </div>
+
+
+              {errorMessage && (
+                <div className="p-3 rounded-lg bg-danger-soft border border-danger/20 text-xs text-danger font-medium">
+                  {errorMessage}
+                </div>
+              )}
 
               <Button
                 type="submit"
                 size="md"
                 variant="primary"
-                className="w-full"
+                className="w-full font-medium"
                 isLoading={isVerifying}
-                rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Confirm & Continue
+                Verify
               </Button>
 
               <div className="flex items-center justify-between text-xs text-text-muted pt-2 border-t border-border-subtle">
@@ -125,7 +240,7 @@ function VerifyContent() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setCountdown(60)}
+                    onClick={handleResend}
                     className="text-primary hover:underline font-semibold cursor-pointer"
                   >
                     Resend Code
@@ -133,6 +248,7 @@ function VerifyContent() {
                 )}
               </div>
             </form>
+
           )}
         </div>
       </div>

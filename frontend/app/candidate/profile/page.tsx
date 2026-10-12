@@ -41,6 +41,7 @@ import {
   CandidateEducation,
   CandidateCertification,
 } from "@/lib/candidate/types";
+import { ResumeFileManager } from "@/components/resume/ResumeFileManager";
 import {
   WorkExperience,
   Education,
@@ -158,6 +159,7 @@ export default function CandidateProfilePage() {
 
   // Edit Personal Info Modal
   const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false);
+  const [name, setName] = useState("");
   const [headline, setHeadline] = useState("");
   const [summary, setSummary] = useState("");
   const [location, setLocation] = useState("");
@@ -242,6 +244,7 @@ export default function CandidateProfilePage() {
 
   // Personal Info
   const handleOpenPersonalModal = () => {
+    setName(identity?.fullName || "");
     setHeadline(profile?.headline || "");
     setSummary(profile?.summary || "");
     setLocation(profile?.location || "India");
@@ -252,6 +255,7 @@ export default function CandidateProfilePage() {
   const handleSavePersonal = (e: React.FormEvent) => {
     e.preventDefault();
     updateCandidateProfile({
+      fullName: name.trim() || undefined,
       headline,
       summary,
       location,
@@ -657,6 +661,32 @@ export default function CandidateProfilePage() {
         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed whitespace-pre-line">
           {profile?.summary || "No professional summary added yet."}
         </p>
+      </Card>
+
+      {/* Resume Section (Upload, View, Download, Replace, Delete) */}
+      <Card className="p-6 sm:p-7 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex flex-col gap-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Resume / CV</h2>
+              <p className="text-xs text-slate-500">
+                Manage your active resume document for 1-click applications
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/candidate/resume"
+            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>Open Resume Studio</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <ResumeFileManager />
       </Card>
 
       {/* 1. Work Experience Section */}
@@ -1233,30 +1263,42 @@ export default function CandidateProfilePage() {
       >
         <form onSubmit={handleSavePersonal} className="flex flex-col gap-4">
           <Input
-            label="Professional Headline"
+            label="Full Name *"
+            placeholder="e.g. Alen William"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <Input
+            label="Professional Headline *"
+            placeholder="e.g. Aspiring Backend Engineer"
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
             required
           />
           <Textarea
             label="Professional Summary"
+            placeholder="Motivated technology candidate..."
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={4}
-            required
           />
-          <Input
-            label="Current Location"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            required
-          />
-          <Input
-            label="Phone Number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Current Location"
+              placeholder="e.g. India"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              required
+            />
+            <Input
+              label="Phone Number"
+              placeholder="e.g. 9876543210"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          </div>
           <div className="flex justify-end gap-2 pt-3 border-t border-border">
             <Button type="button" variant="secondary" size="sm" onClick={() => setIsPersonalModalOpen(false)}>
               Cancel

@@ -28,6 +28,7 @@ import {
   CandidateApplication,
   CandidateInterview,
   ResumeDraft,
+  UploadedResume,
   ProfileCompleteness,
   ProfileSuggestion,
   JobMatchResult,
@@ -43,7 +44,14 @@ import {
   AUTH_USER_KEY,
   AUTH_ROLE_KEY,
   notifyAuthChange,
+  getStoredUser,
 } from "@/lib/api/auth";
+import {
+  fetchResumeFromBackend,
+  uploadResumeToBackend,
+  replaceResumeInBackend,
+  deleteResumeFromBackend,
+} from "@/lib/api/resume";
 
 export interface CandidateContextType {
   // Identity & Verification
@@ -63,7 +71,7 @@ export interface CandidateContextType {
   confirmProfile: () => ConfirmedProfile;
 
   // Profile Updates
-  updateCandidateProfile: (partial: Partial<StructuredProfile>) => void;
+  updateCandidateProfile: (partial: Partial<StructuredProfile> & { fullName?: string; phone?: string }) => void;
   addEducation: (edu: Omit<CandidateEducation, "id">) => void;
   updateEducation: (id: string, edu: Partial<CandidateEducation>) => void;
   deleteEducation: (id: string) => void;
@@ -93,6 +101,13 @@ export interface CandidateContextType {
   syncResumeWithProfile: () => void;
   saveResumeToProfile: (fields: Partial<StructuredProfile>) => void;
   acknowledgeProfileChanges: () => void;
+
+  // Uploaded Resume Document Lifecycle (Upload, View, Download, Replace, Delete)
+  uploadedResume: UploadedResume | null;
+  uploadResume: (resume: Omit<UploadedResume, "id" | "uploadedAt">) => void;
+  replaceResume: (resume: Omit<UploadedResume, "id" | "uploadedAt">) => void;
+  deleteResume: () => void;
+  updateResumeScore: (score: number) => void;
 
   // Computed Selectors
   completeness: ProfileCompleteness;
@@ -265,6 +280,12 @@ function syncAuthSession(record: CandidateRecord) {
   notifyAuthChange();
 }
 
+const TAG_CANDIDATE_RECORD_KEY = "tag_candidate_record";
+const TAG_CANDIDATE_DB_KEY = "tag_candidate_db";
+const TAG_CANDIDATE_IDENTITY_KEY = "tag_candidate_identity";
+const TAG_CANDIDATE_DISCOVERY_DRAFT_KEY = "tag_candidate_discovery_draft";
+const TAG_CANDIDATE_UPLOADED_RESUME_KEY = "tag_candidate_uploaded_resume";
+
 export function CandidateProvider({ children }: { children: React.ReactNode }) {
   const [identity, setIdentityState] = useState<IdentityDraft | null>(null);
   const [phoneVerified, setPhoneVerifiedState] = useState<boolean>(false);
@@ -274,12 +295,224 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
 
   // Canonical candidate record
   const [candidateRecord, setCandidateRecord] = useState<CandidateRecord | null>(null);
+  const [uploadedResume, setUploadedResume] = useState<UploadedResume | null>(null);
   const [feedback, setFeedbackState] = useState<Feedback>({ ...defaultFeedback });
   const [tasks, setTasksState] = useState<PlanTask[]>([]);
   const [lastUpdateNotice, setLastUpdateNoticeState] = useState<string | null>(null);
 
   // In-session candidate database to test switching or multiple accounts without cross-leakage
   const [sessionCandidates, setSessionCandidates] = useState<Record<string, CandidateRecord>>({});
+
+  // Restore persisted state from storage on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const storedDbStr = localStorage.getItem(TAG_CANDIDATE_DB_KEY);
+      let parsedDb: Record<string, CandidateRecord> = {};
+      if (storedDbStr) {
+        try {
+          parsedDb = JSON.parse(storedDbStr);
+          setSessionCandidates(parsedDb);
+        } catch {}
+      }
+
+      // Check current auth user
+      const rawAuthUser = localStorage.getItem(AUTH_USER_KEY);
+      let authUser: any = null;
+      if (rawAuthUser) {
+        try {
+          authUser = JSON.parse(rawAuthUser);
+        } catch {}
+      }
+
+      const activeEmail = authUser?.email?.trim().toLowerCase();
+      const activePhone = authUser?.phone ? String(authUser.phone).replace(/\D/g, "") : "";
+
+      // Check candidate record: specific to email, then specific to phone, then general
+      let activeRecord: CandidateRecord | null = null;
+      if (activeEmail && localStorage.getItem(`tag_candidate_record_${activeEmail}`)) {
+        try {
+          activeRecord = JSON.parse(localStorage.getItem(`tag_candidate_record_${activeEmail}`)!);
+        } catch {}
+      }
+      if (!activeRecord && activeEmail && parsedDb[activeEmail]) {
+        activeRecord = parsedDb[activeEmail];
+      }
+      if (!activeRecord && activePhone && parsedDb[activePhone]) {
+        activeRecord = parsedDb[activePhone];
+      }
+      if (!activeRecord) {
+        const rawGeneric = localStorage.getItem(TAG_CANDIDATE_RECORD_KEY);
+        if (rawGeneric) {
+          try {
+            activeRecord = JSON.parse(rawGeneric);
+          } catch {}
+        }
+      }
+
+      if (activeRecord) {
+        if (
+          authUser?.name &&
+          authUser.name.toLowerCase() !== activeRecord.identity.fullName.toLowerCase() &&
+          activeRecord.identity.fullName.toLowerCase() === activeEmail?.split("@")[0]
+        ) {
+          activeRecord.identity.fullName = authUser.name;
+        }
+        setCandidateRecord(activeRecord);
+        setIdentityState(activeRecord.identity);
+        setPhoneVerifiedState(true);
+        if (activeRecord.discovery) {
+          setDiscoveryDraftState(activeRecord.discovery);
+        }
+        if (activeRecord.uploadedResume) {
+          setUploadedResume(activeRecord.uploadedResume);
+        }
+      } else {
+        // Try restoring draft discovery
+        const rawDraft = localStorage.getItem(TAG_CANDIDATE_DISCOVERY_DRAFT_KEY);
+        if (rawDraft) {
+          try {
+            setDiscoveryDraftState(JSON.parse(rawDraft));
+          } catch {}
+        }
+
+        // Try restoring identity
+        const rawIdentity = localStorage.getItem(TAG_CANDIDATE_IDENTITY_KEY);
+        if (rawIdentity) {
+          try {
+            setIdentityState(JSON.parse(rawIdentity));
+            setPhoneVerifiedState(true);
+          } catch {}
+        } else if (authUser && (authUser.role === "candidate" || !authUser.role)) {
+          setIdentityState({
+            fullName: authUser.name || "Candidate",
+            email: authUser.email,
+            phone: authUser.phone || "",
+            countryCode: authUser.country_code || "+91",
+            agreeToTerms: true,
+          });
+          setPhoneVerifiedState(true);
+        }
+      }
+
+      // Check for candidate uploaded resume
+      let initialResume: UploadedResume | null = null;
+      if (activeEmail && localStorage.getItem(`tag_candidate_resume_${activeEmail}`)) {
+        try {
+          initialResume = JSON.parse(localStorage.getItem(`tag_candidate_resume_${activeEmail}`)!);
+        } catch {}
+      }
+      if (!initialResume && activeRecord?.uploadedResume) {
+        initialResume = activeRecord.uploadedResume;
+      }
+      if (!initialResume) {
+        const rawResume = localStorage.getItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY);
+        if (rawResume) {
+          try {
+            initialResume = JSON.parse(rawResume);
+          } catch {}
+        }
+      }
+      if (initialResume) {
+        setUploadedResume(initialResume);
+      }
+
+      // Query Django backend for candidate's resume
+      if (activeEmail) {
+        fetchResumeFromBackend(activeEmail).then((backendResume) => {
+          if (backendResume) {
+            setUploadedResume(backendResume);
+            setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: backendResume } : prev));
+            try {
+              localStorage.setItem(`tag_candidate_resume_${activeEmail}`, JSON.stringify(backendResume));
+              localStorage.setItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY, JSON.stringify(backendResume));
+            } catch {}
+          }
+        }).catch((err) => {
+          console.warn("Could not sync resume from Django backend:", err);
+        });
+      }
+    } catch (err) {
+      console.warn("Error restoring candidate state:", err);
+    }
+  }, []);
+
+  // Sync candidate resume whenever auth session changes (login / switch user)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleAuthChange = () => {
+      const raw = localStorage.getItem(AUTH_USER_KEY);
+      if (!raw) return;
+      try {
+        const user = JSON.parse(raw);
+        const email = user?.email?.trim().toLowerCase();
+        if (email) {
+          const cachedResume = localStorage.getItem(`tag_candidate_resume_${email}`);
+          if (cachedResume) {
+            try {
+              setUploadedResume(JSON.parse(cachedResume));
+            } catch {}
+          }
+          fetchResumeFromBackend(email).then((backendResume) => {
+            if (backendResume) {
+              setUploadedResume(backendResume);
+              setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: backendResume } : prev));
+              try {
+                localStorage.setItem(`tag_candidate_resume_${email}`, JSON.stringify(backendResume));
+                localStorage.setItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY, JSON.stringify(backendResume));
+              } catch {}
+            }
+          });
+        }
+      } catch {}
+    };
+
+    window.addEventListener("tag_auth_changed", handleAuthChange);
+    return () => {
+      window.removeEventListener("tag_auth_changed", handleAuthChange);
+    };
+  }, []);
+
+  // Persist candidate record whenever updated
+  useEffect(() => {
+    if (typeof window === "undefined" || !candidateRecord) return;
+    try {
+      localStorage.setItem(TAG_CANDIDATE_RECORD_KEY, JSON.stringify(candidateRecord));
+      if (candidateRecord.identity?.email) {
+        localStorage.setItem(
+          `tag_candidate_record_${candidateRecord.identity.email.trim().toLowerCase()}`,
+          JSON.stringify(candidateRecord)
+        );
+      }
+      setSessionCandidates((prev) => {
+        const next = { ...prev };
+        if (candidateRecord.identity?.phone) next[candidateRecord.identity.phone] = candidateRecord;
+        if (candidateRecord.identity?.email) next[candidateRecord.identity.email.trim().toLowerCase()] = candidateRecord;
+        try {
+          localStorage.setItem(TAG_CANDIDATE_DB_KEY, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    } catch (e) {
+      console.warn("Failed to persist candidateRecord:", e);
+    }
+  }, [candidateRecord]);
+
+  // Persist identity whenever updated
+  useEffect(() => {
+    if (typeof window === "undefined" || !identity) return;
+    try {
+      localStorage.setItem(TAG_CANDIDATE_IDENTITY_KEY, JSON.stringify(identity));
+    } catch {}
+  }, [identity]);
+
+  // Persist discoveryDraft whenever updated
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      localStorage.setItem(TAG_CANDIDATE_DISCOVERY_DRAFT_KEY, JSON.stringify(discoveryDraft));
+    } catch {}
+  }, [discoveryDraft]);
 
   const setIdentity = useCallback((id: IdentityDraft) => {
     setIdentityState(id);
@@ -424,7 +657,31 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
       buildInitialResumeDraft(newRecord, nextRevision);
 
     setCandidateRecord(newRecord);
-    setSessionCandidates((prev) => ({ ...prev, [newRecord.identity.phone]: newRecord }));
+    setSessionCandidates((prev) => {
+      const next = {
+        ...prev,
+        [newRecord.identity.phone]: newRecord,
+        [newRecord.identity.email.trim().toLowerCase()]: newRecord,
+      };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(TAG_CANDIDATE_DB_KEY, JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(TAG_CANDIDATE_RECORD_KEY, JSON.stringify(newRecord));
+        if (newRecord.identity?.email) {
+          localStorage.setItem(
+            `tag_candidate_record_${newRecord.identity.email.trim().toLowerCase()}`,
+            JSON.stringify(newRecord)
+          );
+        }
+      } catch {}
+    }
 
     // Sync auth session so ProtectedRoute lets user into candidate routes
     syncAuthSession(newRecord);
@@ -445,7 +702,7 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
 
   // Profile Mutations
   const updateCandidateProfile = useCallback(
-    (partial: Partial<StructuredProfile>) => {
+    (partial: Partial<StructuredProfile> & { fullName?: string; phone?: string }) => {
       setCandidateRecord((prev) => {
         if (!prev) return null;
         const nextRev = prev.profileRevision + 1;
@@ -453,12 +710,24 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
           ...prev.profile,
           ...partial,
         };
+        const updatedIdentity: IdentityDraft = {
+          ...prev.identity,
+          fullName: partial.fullName !== undefined && partial.fullName.trim() ? partial.fullName.trim() : prev.identity.fullName,
+          phone: partial.phone !== undefined && partial.phone.trim() ? partial.phone.trim() : prev.identity.phone,
+        };
         const updated: CandidateRecord = {
           ...prev,
           profileRevision: nextRev,
+          identity: updatedIdentity,
           profile: updatedProfile,
         };
-        setSessionCandidates((sc) => ({ ...sc, [updated.identity.phone]: updated }));
+        setIdentityState(updatedIdentity);
+        syncAuthSession(updated);
+        setSessionCandidates((sc) => ({
+          ...sc,
+          [updated.identity.phone]: updated,
+          [updated.identity.email.trim().toLowerCase()]: updated,
+        }));
         return updated;
       });
     },
@@ -926,14 +1195,51 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
   const loginCandidateByEmail = useCallback(
     (rawEmail: string) => {
       const cleanEmail = rawEmail.trim().toLowerCase();
-      const existing = Object.values(sessionCandidates).find(
-        (c) => c.identity.email.trim().toLowerCase() === cleanEmail
+      let existing = Object.values(sessionCandidates).find(
+        (c) => c.identity?.email?.trim().toLowerCase() === cleanEmail
       );
+      if (!existing && typeof window !== "undefined") {
+        const stored =
+          localStorage.getItem(`tag_candidate_record_${cleanEmail}`) ||
+          localStorage.getItem(TAG_CANDIDATE_RECORD_KEY);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored) as CandidateRecord;
+            if (parsed.identity?.email?.trim().toLowerCase() === cleanEmail) {
+              existing = parsed;
+            }
+          } catch {}
+        }
+      }
+
       if (existing) {
         setCandidateRecord(existing);
         setIdentityState(existing.identity);
         setPhoneVerifiedState(true);
         syncAuthSession(existing);
+
+        if (existing.uploadedResume) {
+          setUploadedResume(existing.uploadedResume);
+        } else {
+          const cachedResume = localStorage.getItem(`tag_candidate_resume_${cleanEmail}`);
+          if (cachedResume) {
+            try {
+              setUploadedResume(JSON.parse(cachedResume));
+            } catch {}
+          }
+        }
+
+        fetchResumeFromBackend(cleanEmail).then((res) => {
+          if (res) {
+            setUploadedResume(res);
+            setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: res } : prev));
+            try {
+              localStorage.setItem(`tag_candidate_resume_${cleanEmail}`, JSON.stringify(res));
+              localStorage.setItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY, JSON.stringify(res));
+            } catch {}
+          }
+        });
+
         return {
           exists: true,
           onboardingComplete: existing.onboardingComplete,
@@ -945,6 +1251,12 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
         candidateRecord.identity.email.trim().toLowerCase() === cleanEmail
       ) {
         syncAuthSession(candidateRecord);
+        fetchResumeFromBackend(cleanEmail).then((res) => {
+          if (res) {
+            setUploadedResume(res);
+            setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: res } : prev));
+          }
+        });
         return {
           exists: true,
           onboardingComplete: candidateRecord.onboardingComplete,
@@ -953,6 +1265,12 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
 
       if (identity && identity.email.trim().toLowerCase() === cleanEmail) {
         setPhoneVerifiedState(true);
+        fetchResumeFromBackend(cleanEmail).then((res) => {
+          if (res) {
+            setUploadedResume(res);
+            setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: res } : prev));
+          }
+        });
         return {
           exists: true,
           onboardingComplete: false,
@@ -968,6 +1286,13 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
       };
       setIdentityState(newIdentity);
       setPhoneVerifiedState(true);
+
+      fetchResumeFromBackend(cleanEmail).then((res) => {
+        if (res) {
+          setUploadedResume(res);
+          setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: res } : prev));
+        }
+      });
 
       return {
         exists: false,
@@ -1213,18 +1538,190 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
     setLastUpdateNoticeState(null);
   }, []);
 
+  const uploadResume = useCallback(
+    async (resumeData: Omit<UploadedResume, "id" | "uploadedAt">) => {
+      const activeEmail =
+        candidateRecord?.identity?.email ||
+        getStoredUser()?.email ||
+        (typeof window !== "undefined"
+          ? JSON.parse(localStorage.getItem(AUTH_USER_KEY) || "{}")?.email
+          : undefined);
+
+      const newResume: UploadedResume = {
+        id: `res_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        ...resumeData,
+        uploadedAt: new Date().toISOString(),
+      };
+      setUploadedResume(newResume);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY, JSON.stringify(newResume));
+          if (activeEmail) {
+            localStorage.setItem(
+              `tag_candidate_resume_${activeEmail.trim().toLowerCase()}`,
+              JSON.stringify(newResume)
+            );
+          }
+        } catch (e) {
+          console.warn("Could not save resume to localStorage:", e);
+        }
+      }
+      setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: newResume } : prev));
+      setLastUpdateNoticeState(`Uploaded resume: ${newResume.fileName}`);
+
+      // Persist to Django database
+      try {
+        const backendResume = await uploadResumeToBackend(resumeData, activeEmail);
+        if (backendResume) {
+          setUploadedResume(backendResume);
+          setCandidateRecord((prev) =>
+            prev ? { ...prev, uploadedResume: backendResume } : prev
+          );
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(
+                TAG_CANDIDATE_UPLOADED_RESUME_KEY,
+                JSON.stringify(backendResume)
+              );
+              if (activeEmail) {
+                localStorage.setItem(
+                  `tag_candidate_resume_${activeEmail.trim().toLowerCase()}`,
+                  JSON.stringify(backendResume)
+                );
+              }
+            } catch {}
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to persist resume to Django backend:", err);
+      }
+    },
+    [candidateRecord]
+  );
+
+  const replaceResume = useCallback(
+    async (resumeData: Omit<UploadedResume, "id" | "uploadedAt">) => {
+      const activeEmail =
+        candidateRecord?.identity?.email ||
+        getStoredUser()?.email ||
+        (typeof window !== "undefined"
+          ? JSON.parse(localStorage.getItem(AUTH_USER_KEY) || "{}")?.email
+          : undefined);
+
+      const newResume: UploadedResume = {
+        id: `res_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        ...resumeData,
+        uploadedAt: new Date().toISOString(),
+      };
+      setUploadedResume(newResume);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY, JSON.stringify(newResume));
+          if (activeEmail) {
+            localStorage.setItem(
+              `tag_candidate_resume_${activeEmail.trim().toLowerCase()}`,
+              JSON.stringify(newResume)
+            );
+          }
+        } catch (e) {
+          console.warn("Could not save resume to localStorage:", e);
+        }
+      }
+      setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: newResume } : prev));
+      setLastUpdateNoticeState(`Replaced resume: ${newResume.fileName}`);
+
+      // Persist replacement to Django database
+      try {
+        const backendResume = await replaceResumeInBackend(resumeData, activeEmail);
+        if (backendResume) {
+          setUploadedResume(backendResume);
+          setCandidateRecord((prev) =>
+            prev ? { ...prev, uploadedResume: backendResume } : prev
+          );
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem(
+                TAG_CANDIDATE_UPLOADED_RESUME_KEY,
+                JSON.stringify(backendResume)
+              );
+              if (activeEmail) {
+                localStorage.setItem(
+                  `tag_candidate_resume_${activeEmail.trim().toLowerCase()}`,
+                  JSON.stringify(backendResume)
+                );
+              }
+            } catch {}
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to replace resume in Django backend:", err);
+      }
+    },
+    [candidateRecord]
+  );
+
+  const deleteResume = useCallback(async () => {
+    const activeEmail =
+      candidateRecord?.identity?.email ||
+      getStoredUser()?.email ||
+      (typeof window !== "undefined"
+        ? JSON.parse(localStorage.getItem(AUTH_USER_KEY) || "{}")?.email
+        : undefined);
+
+    setUploadedResume(null);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY);
+      if (activeEmail) {
+        localStorage.removeItem(
+          `tag_candidate_resume_${activeEmail.trim().toLowerCase()}`
+        );
+      }
+    }
+    setCandidateRecord((prev) => (prev ? { ...prev, uploadedResume: undefined } : prev));
+    setLastUpdateNoticeState("Resume deleted successfully");
+
+    // Delete from Django database
+    try {
+      await deleteResumeFromBackend(activeEmail);
+    } catch (err) {
+      console.warn("Failed to delete resume from Django backend:", err);
+    }
+  }, [candidateRecord]);
+
+  const updateResumeScore = useCallback((score: number) => {
+    setUploadedResume((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, atsScore: score };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY, JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
+  }, []);
+
   const resetAll = useCallback(() => {
     setIdentityState(null);
     setPhoneVerifiedState(false);
     setDiscoveryDraftState({ ...initialDiscoveryDraft });
     setCandidateRecord(null);
+    setUploadedResume(null);
     setFeedbackState({ ...defaultFeedback });
     setTasksState([]);
     setLastUpdateNoticeState(null);
     if (typeof window !== "undefined") {
-      localStorage.removeItem("tag_auth_token");
-      localStorage.removeItem("tag_auth_user");
-      localStorage.removeItem("tag_active_role");
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem(AUTH_ROLE_KEY);
+      localStorage.removeItem(TAG_CANDIDATE_RECORD_KEY);
+      localStorage.removeItem(TAG_CANDIDATE_IDENTITY_KEY);
+      localStorage.removeItem(TAG_CANDIDATE_DISCOVERY_DRAFT_KEY);
+      localStorage.removeItem(TAG_CANDIDATE_UPLOADED_RESUME_KEY);
+      localStorage.removeItem("tag_candidate_avatar");
+      // Note: We deliberately do not delete user-scoped account records
+      // tag_candidate_record_${email} or tag_candidate_resume_${email} so that
+      // upon next login, the user's saved account profile and resume are restored!
       window.dispatchEvent(new Event("storage"));
     }
   }, []);
@@ -1268,6 +1765,11 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
         syncResumeWithProfile,
         saveResumeToProfile,
         acknowledgeProfileChanges,
+        uploadedResume,
+        uploadResume,
+        replaceResume,
+        deleteResume,
+        updateResumeScore,
         completeness,
         suggestions,
         matchedJobs,

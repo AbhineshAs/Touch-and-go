@@ -27,6 +27,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { mockOtpService } from "@/lib/candidate/services/otpService";
 import { TagLogo } from "@/components/ui/TagLogo";
+import { registerCandidateApi, registerEmployerApi, resendOtpApi, loginApi } from "@/lib/api/auth";
 
 type AuthMode = "signup" | "login" | "forgot_password";
 type AuthRole = "candidate" | "employer";
@@ -124,9 +125,15 @@ function AuthContent() {
 
   const [activeTab, setActiveTab] = useState<AuthMode>(initialMode);
   const [selectedRole, setSelectedRole] = useState<AuthRole>(initialRole);
+  const [currentRedirect, setCurrentRedirect] = useState<string | null>(() => {
+    if (initialRole === "employer") return "/employer/dashboard";
+    if (redirect && redirect.startsWith("/employer")) return redirect;
+    return redirect && !redirect.startsWith("/employer") ? redirect : "/candidate/dashboard";
+  });
   const [showRoleSwitchWarning, setShowRoleSwitchWarning] = useState(false);
   const [pendingRoleSwitch, setPendingRoleSwitch] = useState<AuthRole | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+
 
   const [showCandidatePassword, setShowCandidatePassword] = useState(false);
   const [showCandidateConfirmPassword, setShowCandidateConfirmPassword] = useState(false);
@@ -321,11 +328,21 @@ function AuthContent() {
     }
 
     setSelectedRole(targetRole);
+    if (targetRole === "employer") {
+      setCurrentRedirect("/employer/organization?setup=true");
+    } else {
+      setCurrentRedirect((redirect && !redirect.startsWith("/employer")) ? redirect : "/candidate/dashboard");
+    }
   };
 
   const confirmRoleSwitch = () => {
     if (pendingRoleSwitch) {
       setSelectedRole(pendingRoleSwitch);
+      if (pendingRoleSwitch === "employer") {
+        setCurrentRedirect("/employer/organization?setup=true");
+      } else {
+        setCurrentRedirect((redirect && !redirect.startsWith("/employer")) ? redirect : "/candidate/dashboard");
+      }
       setPendingRoleSwitch(null);
       setShowRoleSwitchWarning(false);
     }
@@ -341,7 +358,8 @@ function AuthContent() {
     setAuthError(null);
   };
 
-  const onCandidateSignUpSubmit = (data: CandidateSignUpFormValues) => {
+  const onCandidateSignUpSubmit = async (data: CandidateSignUpFormValues) => {
+    setAuthError(null);
     setIdentity({
       fullName: data.fullName,
       email: data.email,
@@ -351,49 +369,107 @@ function AuthContent() {
       agreeToTerms: data.agreeToTerms,
     });
 
-    mockOtpService.createChallenge(data.phone, data.countryCode);
-    router.push("/verify-phone");
+    try {
+      await registerCandidateApi({
+        fullName: data.fullName,
+        email: data.email,
+        countryCode: data.countryCode,
+        phone: data.phone,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        agreeToTerms: data.agreeToTerms,
+      });
+      mockOtpService.createChallenge(data.phone, data.countryCode);
+      router.push("/verify-phone");
+    } catch (apiErr: any) {
+      console.warn("Backend candidate registration status:", apiErr);
+      const errMsg = apiErr?.message || "Failed to create account. Please check your details.";
+      setAuthError(errMsg);
+      if (errMsg.toLowerCase().includes("email")) {
+        candidateSignUpForm.setError("email", { message: errMsg });
+      }
+      if (errMsg.toLowerCase().includes("phone") || errMsg.toLowerCase().includes("mobile")) {
+        candidateSignUpForm.setError("phone", { message: errMsg });
+      }
+      return;
+    }
   };
 
   const onEmployerSignUpSubmit = async (data: EmployerSignUpFormValues) => {
+    setAuthError(null);
+    try {
+      await registerEmployerApi({
+        fullName: data.fullName,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        agreeToTerms: data.agreeToTerms,
+      });
+    } catch (apiErr: any) {
+      console.warn("Backend employer registration status:", apiErr);
+      const errMsg = apiErr?.message || "Failed to create company account. Please check your details.";
+      setAuthError(errMsg);
+      if (errMsg.toLowerCase().includes("email")) {
+        employerSignUpForm.setError("email", { message: errMsg });
+      }
+      return;
+    }
+
     await signup({
       name: data.fullName,
       email: data.email,
       role: "employer",
     });
-    const redirectQuery = redirect ? `&redirect=${encodeURIComponent(redirect)}` : "";
-    router.push(`/verify?role=employer&email=${encodeURIComponent(data.email)}${redirectQuery}`);
+    const targetRedirect = currentRedirect && currentRedirect.startsWith("/employer") ? currentRedirect : "/employer/organization?setup=true";
+    router.push(`/verify?role=employer&email=${encodeURIComponent(data.email)}&redirect=${encodeURIComponent(targetRedirect)}`);
   };
+
 
   const onCandidateLoginSubmit = async (data: CandidateLoginFormValues) => {
     try {
       setAuthError(null);
+      try {
+        await loginApi(data.email, data.password, "candidate");
+      } catch (backendErr: any) {
+        if (backendErr?.message && !backendErr.message.includes("Failed to fetch")) {
+          setAuthError(backendErr.message);
+          return;
+        }
+      }
       if (loginCandidateByEmail) {
         loginCandidateByEmail(data.email);
       }
       await login(data.email, "candidate");
 
-      if (redirect) {
+      if (redirect && !redirect.startsWith("/employer")) {
         router.push(redirect);
       } else {
         router.push("/candidate/dashboard");
       }
     } catch (err: any) {
-      setAuthError(err.message || "Failed to sign in. Please verify your credentials.");
+      setAuthError(err.message || "Invalid email address or password.");
     }
   };
 
   const onEmployerLoginSubmit = async (data: EmployerLoginFormValues) => {
     try {
       setAuthError(null);
+      try {
+        await loginApi(data.email, data.password, "employer");
+      } catch (backendErr: any) {
+        if (backendErr?.message && !backendErr.message.includes("Failed to fetch")) {
+          setAuthError(backendErr.message);
+          return;
+        }
+      }
       await login(data.email, "employer");
-      if (redirect) {
+      if (redirect && redirect.startsWith("/employer")) {
         router.push(redirect);
       } else {
         router.push("/employer/dashboard");
       }
     } catch (err: any) {
-      setAuthError(err.message || "Failed to sign in. Please verify your credentials.");
+      setAuthError(err.message || "Invalid email address or password.");
     }
   };
 

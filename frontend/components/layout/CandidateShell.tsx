@@ -51,11 +51,18 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", syncAvatar);
   }, []);
 
-  const candidateName = candidateRecord?.identity.fullName || authUser?.name || "Alen William";
-  const candidateEmail = candidateRecord?.identity.email || authUser?.email || "alenwilliam92@gmail.com";
+  const candidateName =
+    candidateRecord?.identity?.fullName ||
+    authUser?.name ||
+    "Candidate";
+  const candidateEmail =
+    candidateRecord?.identity?.email ||
+    authUser?.email ||
+    "candidate@tagjobs.in";
   const candidateAvatar =
     storedAvatar ||
-    (candidateName.toLowerCase().includes("ananya")
+    candidateRecord?.identity?.avatarUrl ||
+    (candidateName.toLowerCase().includes("ananya") || candidateEmail.toLowerCase().includes("ananya")
       ? MOCK_USERS.candidate.avatarUrl
       : undefined);
 

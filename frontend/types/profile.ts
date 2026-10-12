@@ -40,3 +40,14 @@ export interface Skill {
   name: string;
   proficiency: 'Beginner' | 'Comfortable' | 'Advanced' | 'Expert';
 }
+
+export interface UploadedResume {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  uploadedAt: string;
+  dataUrl?: string;
+  extractedText?: string;
+  atsScore?: number;
+}

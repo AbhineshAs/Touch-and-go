@@ -147,6 +147,7 @@ export interface IdentityDraft {
   phone: string;
   password?: string;
   agreeToTerms: boolean;
+  avatarUrl?: string;
 }
 
 export interface DiscoveryDraft {
@@ -438,6 +439,17 @@ export interface JobMatchResult {
   score: number;
 }
 
+export interface UploadedResume {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  uploadedAt: string;
+  dataUrl?: string;
+  extractedText?: string;
+  atsScore?: number;
+}
+
 export interface CandidateRecord {
   id: string;
   schemaVersion: "1.0.0";
@@ -451,5 +463,6 @@ export interface CandidateRecord {
   savedJobIds: string[];
   interviews: CandidateInterview[];
   resumeDraft?: ResumeDraft;
+  uploadedResume?: UploadedResume;
 }
 

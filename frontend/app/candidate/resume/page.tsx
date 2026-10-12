@@ -4,13 +4,16 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowLeft, RotateCcw, FileText, CheckCircle2 } from "lucide-react";
 import { ResumeModeSelector } from "@/components/resume/ResumeModeSelector";
+import { ResumeFileManager } from "@/components/resume/ResumeFileManager";
 import { ATSResumeUploader, ATSAnalysisPayload } from "@/components/resume/ATSResumeUploader";
 import { ATSFeatureSummary } from "@/components/resume/ATSFeatureSummary";
 import { ATSQuickActions } from "@/components/resume/ATSQuickActions";
 import { ATSScoreReport, ATSReportData } from "@/components/resume/ATSScoreReport";
+import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 import { cn } from "@/lib/utils";
 
 export default function CandidateResumePage() {
+  const { updateResumeScore } = useCandidate();
   const [activeTab, setActiveTab] = useState<"selector" | "ats">("selector");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisReport, setAnalysisReport] = useState<ATSReportData | null>(null);
@@ -34,6 +37,8 @@ export default function CandidateResumePage() {
     if (hasNext) calculatedScore += 4;
     if (textLength > 600) calculatedScore += 2;
     calculatedScore = Math.min(94, Math.max(68, calculatedScore));
+
+    updateResumeScore(calculatedScore);
 
     const grade = calculatedScore >= 90 ? "A" : calculatedScore >= 80 ? "B+" : "B";
 
@@ -179,6 +184,33 @@ export default function CandidateResumePage() {
         {/* VIEW 1: RESUME ENTRY VIEW (Mode Selector) */}
         {activeTab === "selector" && (
           <div className="flex flex-col gap-8">
+            {/* Dedicated Resume File Management Section (Upload, View, Download, Replace, Delete) */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between pb-1">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#4F46E5]" />
+                    <span>Candidate Resume Document</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Upload, view, download, replace, or delete your verified candidate resume.
+                  </p>
+                </div>
+              </div>
+
+              <ResumeFileManager
+                onRunATSScan={(resume) => {
+                  setActiveTab("ats");
+                  handleRunAnalysis({
+                    sourceType: "file",
+                    fileName: resume.fileName,
+                    fileSize: resume.fileSize,
+                    text: resume.extractedText || `Parsed content of ${resume.fileName}`,
+                  });
+                }}
+              />
+            </div>
+
             <ResumeModeSelector
               onSelectMode={(mode) => {
                 if (mode === "ats") setActiveTab("ats");
