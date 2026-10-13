@@ -547,7 +547,7 @@ export default function CandidateProfilePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-8 pb-16">
+    <div className="w-full flex flex-col gap-8 pb-16">
       {/* Notice Banner */}
       {isSavedNotice && (
         <div className="fixed top-4 right-4 z-50 p-3.5 rounded-xl bg-success text-white shadow-xl text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top duration-200">

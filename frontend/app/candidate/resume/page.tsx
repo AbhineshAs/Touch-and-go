@@ -135,51 +135,48 @@ export default function CandidateResumePage() {
   };
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-8 py-6 sm:py-8 bg-[#F8FAFC]">
-      <div className="max-w-6xl mx-auto flex flex-col gap-8">
-        {/* Top Breadcrumb & View Toggle Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Link
-              href="/candidate/dashboard"
-              className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
-            >
-              Candidate Portal
-            </Link>
-            <span className="text-slate-300">/</span>
-            <span className="text-xs font-bold text-slate-900">Resume &amp; ATS</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200/90 rounded-xl shadow-2xs">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("selector");
-                setAnalysisReport(null);
-              }}
-              className={cn(
-                "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                activeTab === "selector"
-                  ? "bg-indigo-50 text-[#4F46E5] shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              )}
-            >
-              Resume Overview
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("ats")}
-              className={cn(
-                "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
-                activeTab === "ats"
-                  ? "bg-indigo-50 text-[#4F46E5] shadow-2xs"
-                  : "text-slate-600 hover:text-slate-900"
-              )}
-            >
-              ATS Resume Checker
-            </button>
-          </div>
+    <div className="w-full flex flex-col gap-6">
+      {/* Top Controls & View Toggle Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200/80">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            Resume &amp; ATS
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 font-normal">
+            Manage your verified resume document and run ATS compatibility optimization.
+          </p>
         </div>
+
+        <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200/90 rounded-xl shadow-2xs">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("selector");
+              setAnalysisReport(null);
+            }}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+              activeTab === "selector"
+                ? "bg-blue-50 text-blue-700 shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            )}
+          >
+            Resume Overview
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("ats")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+              activeTab === "ats"
+                ? "bg-blue-50 text-blue-700 shadow-2xs"
+                : "text-slate-600 hover:text-slate-900"
+            )}
+          >
+            ATS Resume Checker
+          </button>
+        </div>
+      </div>
 
         {/* VIEW 1: RESUME ENTRY VIEW (Mode Selector) */}
         {activeTab === "selector" && (
@@ -298,6 +295,5 @@ export default function CandidateResumePage() {
           </div>
         )}
       </div>
-    </div>
   );
 }
