@@ -42,6 +42,8 @@ export const COMPANY_SIZE_OPTIONS = [
   "1000+ employees",
 ];
 
+export const ORG_PROFILE_UPDATED_EVENT = "tag_org_profile_updated";
+
 const STORAGE_PREFIX = "tag_org_profile_";
 
 /**
@@ -54,7 +56,12 @@ let memoryCache: Record<string, OrganizationProfile> = {
 export function getOrganizationProfile(orgId: string = "org_razorwave"): OrganizationProfile {
   if (typeof window !== "undefined") {
     try {
-      const stored = localStorage.getItem(`${STORAGE_PREFIX}${orgId}`);
+      let stored = localStorage.getItem(`${STORAGE_PREFIX}${orgId}`);
+      if (!stored) {
+        stored =
+          localStorage.getItem(`${STORAGE_PREFIX}org_razorwave`) ||
+          localStorage.getItem(`${STORAGE_PREFIX}org_whitetrack`);
+      }
       if (stored) {
         const parsed = JSON.parse(stored);
         return {
@@ -67,20 +74,50 @@ export function getOrganizationProfile(orgId: string = "org_razorwave"): Organiz
     }
   }
 
-  return memoryCache[orgId] ? { ...memoryCache[orgId] } : { ...DEFAULT_ORGANIZATION_PROFILE, id: orgId };
+  const cached =
+    memoryCache[orgId] || memoryCache["org_razorwave"] || memoryCache["org_whitetrack"];
+  return cached ? { ...cached } : { ...DEFAULT_ORGANIZATION_PROFILE, id: orgId };
 }
 
 export function saveOrganizationProfile(profile: OrganizationProfile): OrganizationProfile {
   const updated = { ...profile };
   memoryCache[profile.id] = { ...updated };
+  memoryCache["org_razorwave"] = { ...updated };
+  memoryCache["org_whitetrack"] = { ...updated };
 
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(`${STORAGE_PREFIX}${profile.id}`, JSON.stringify(updated));
-      window.dispatchEvent(new Event("storage"));
+      localStorage.setItem(`${STORAGE_PREFIX}org_razorwave`, JSON.stringify(updated));
+      localStorage.setItem(`${STORAGE_PREFIX}org_whitetrack`, JSON.stringify(updated));
+      localStorage.setItem("tag_org_profile", JSON.stringify(updated));
+
+      // Sync jobs with new organization branding
+      const rawJobs = localStorage.getItem("tag_jobs_storage");
+      if (rawJobs) {
+        try {
+          const parsedJobs = JSON.parse(rawJobs);
+          const updatedJobs = parsedJobs.map((j: any) => ({
+            ...j,
+            organizationLogo: updated.logoUrl !== undefined ? updated.logoUrl : j.organizationLogo,
+            organizationName: updated.name || j.organizationName,
+          }));
+          localStorage.setItem("tag_jobs_storage", JSON.stringify(updatedJobs));
+          window.dispatchEvent(new CustomEvent("tag_jobs_updated", { detail: updatedJobs }));
+        } catch {}
+      }
     } catch (e) {
       console.warn("Failed to save organization profile to localStorage:", e);
     }
+    window.dispatchEvent(
+      new CustomEvent(ORG_PROFILE_UPDATED_EVENT, { detail: updated })
+    );
+    window.dispatchEvent(
+      new CustomEvent("tag_org_update", {
+        detail: { logoUrl: updated.logoUrl, name: updated.name },
+      })
+    );
+    window.dispatchEvent(new Event("storage"));
   }
 
   return updated;
@@ -94,3 +131,4 @@ export function updateOrganizationLogo(orgId: string, logoUrl: string | null): O
   };
   return saveOrganizationProfile(updated);
 }
+

@@ -1079,52 +1079,7 @@ export const MOCK_PIPELINE_APPLICANTS: Application[] = [
   },
 ];
 
-export const MOCK_INTERVIEWS: Interview[] = [
-  {
-    id: "int_01",
-    applicationId: "app_01",
-    candidateId: "prof_cand_01",
-    candidateName: "Ananya Sharma",
-    jobId: "job_01",
-    jobTitle: "Senior Frontend Engineer (React & TypeScript)",
-    scheduledAt: "2026-09-17T09:30:00Z",
-    durationMinutes: 60,
-    interviewerName: "Karthik Raman",
-    interviewerRole: "Hiring Manager / Director of Engineering",
-    interviewerEmail: "karthik.r@razorwave.tech",
-    meetingLink: "https://meet.google.com/tag-rzw-fend",
-    candidateNote:
-      "Please have a GitHub repository or architectural diagram ready to walk through component design and performance trade-offs.",
-    status: "Scheduled",
-  },
-  {
-    id: "int_02",
-    applicationId: "app_05",
-    candidateId: "prof_cand_04",
-    candidateName: "Aditya Hegde",
-    jobId: "job_01",
-    jobTitle: "Senior Frontend Engineer (React & TypeScript)",
-    scheduledAt: "2026-09-12T11:00:00Z",
-    durationMinutes: 45,
-    interviewerName: "Vikramaditya Nair",
-    interviewerRole: "Lead Recruiter",
-    interviewerEmail: "vikram@razorwave.tech",
-    meetingLink: "https://meet.google.com/tag-rzw-scre",
-    status: "Completed",
-    scorecard: {
-      interviewerId: "usr_emp_01",
-      interviewerName: "Vikramaditya Nair",
-      technicalRating: 5,
-      communicationRating: 4,
-      domainKnowledgeRating: 5,
-      cultureAddRating: 5,
-      overallDecision: "Strong Yes",
-      summary:
-        "High maturity, excellent grasp of high-frequency orderbook updates and React reconciliation. Very aligned with our engineering standards.",
-      submittedAt: "2026-09-12T12:10:00Z",
-    },
-  },
-];
+export const MOCK_INTERVIEWS: Interview[] = [];
 
 export const MOCK_NOTIFICATIONS: NotificationItem[] = [
   {

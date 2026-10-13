@@ -91,11 +91,25 @@ export default function CompanyProfilePage() {
         {/* Company Banner Header */}
         <div className="p-6 sm:p-8 rounded-2xl bg-surface border border-border shadow-xs flex flex-col sm:flex-row items-start justify-between gap-6">
           <div className="flex items-start gap-4">
-            <img
-              src={org.logo}
-              alt={org.name}
-              className="w-20 h-20 rounded-2xl object-cover border border-border shrink-0"
-            />
+            {org.logo ? (
+              <img
+                src={org.logo}
+                alt={org.name}
+                className="w-20 h-20 rounded-2xl object-contain bg-white border border-border shrink-0 p-1"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                  const fallback = e.currentTarget.parentElement?.querySelector(".logo-fallback") as HTMLElement;
+                  if (fallback) fallback.classList.remove("hidden");
+                }}
+              />
+            ) : null}
+            <div
+              className={`w-20 h-20 rounded-2xl bg-primary-soft text-primary font-bold flex items-center justify-center text-2xl border border-border shrink-0 logo-fallback ${
+                org.logo ? "hidden" : ""
+              }`}
+            >
+              {(org.name || "C").charAt(0).toUpperCase()}
+            </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-text-primary">

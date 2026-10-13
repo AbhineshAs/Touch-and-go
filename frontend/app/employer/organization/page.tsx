@@ -201,6 +201,11 @@ export default function EmployerOrganizationPage() {
     const previewUrl = URL.createObjectURL(file);
     setLogoUrl(previewUrl);
     setIsLogoModalOpen(false);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("tag_org_update", { detail: { logoUrl: previewUrl } })
+      );
+    }
 
     // Save as Data URL for session persistence
     const reader = new FileReader();
@@ -208,6 +213,11 @@ export default function EmployerOrganizationPage() {
       if (typeof reader.result === "string" && profile) {
         updateOrganizationLogo(profile.id, reader.result);
         setLogoUrl(reader.result);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("tag_org_update", { detail: { logoUrl: reader.result } })
+          );
+        }
         showSuccessFeedback();
       }
     };
@@ -221,6 +231,11 @@ export default function EmployerOrganizationPage() {
     setLogoUrl(null);
     if (profile) {
       updateOrganizationLogo(profile.id, null);
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("tag_org_update", { detail: { logoUrl: null } })
+      );
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = "";

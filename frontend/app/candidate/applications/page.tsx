@@ -57,12 +57,9 @@ export default function CandidateApplicationsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             Your Applications ({applications.length})
           </h1>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-primary-soft text-primary font-bold">
-            Simulated Workspace
-          </span>
         </div>
         <p className="text-xs sm:text-sm text-text-secondary">
-          Track real-time candidate review stages, scheduled interviews, and simulated application timelines.
+          Track real-time candidate review stages, scheduled interviews, and application progression.
         </p>
       </div>
 
@@ -75,12 +72,12 @@ export default function CandidateApplicationsPage() {
           title="No applications in this stage"
           description={
             applications.length === 0
-              ? "You haven't submitted any simulated applications yet. Explore recommended sample roles to test the process."
+              ? "You haven't submitted any job applications yet. Explore active company openings to apply."
               : "No applications found in this specific stage filter."
           }
           action={{
-            label: "Explore Recommended Jobs",
-            onClick: () => (window.location.href = "/candidate/recommended"),
+            label: "Explore Available Jobs",
+            onClick: () => (window.location.href = "/jobs"),
           }}
         />
       ) : (
@@ -94,13 +91,21 @@ export default function CandidateApplicationsPage() {
                       <img
                         src={app.organizationLogo}
                         alt={app.organizationName}
-                        className="w-12 h-12 rounded-xl object-cover border border-border shrink-0"
+                        className="w-12 h-12 rounded-xl object-contain bg-white border border-border shrink-0 p-1"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLElement).style.display = "none";
+                          const fallback = e.currentTarget.parentElement?.querySelector(".logo-fallback") as HTMLElement;
+                          if (fallback) fallback.classList.remove("hidden");
+                        }}
                       />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center shrink-0">
-                        {app.organizationName.charAt(0)}
-                      </div>
-                    )}
+                    ) : null}
+                    <div
+                      className={`w-12 h-12 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center shrink-0 logo-fallback ${
+                        app.organizationLogo ? "hidden" : ""
+                      }`}
+                    >
+                      {app.organizationName.charAt(0)}
+                    </div>
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold text-text-secondary">
                         {app.organizationName}
@@ -141,9 +146,14 @@ export default function CandidateApplicationsPage() {
                       Application status: <strong className="text-text-primary">{app.stage}</strong>
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 text-[11px] text-text-muted">
-                    <ShieldCheck className="w-3.5 h-3.5 text-success" />
-                    <span>Local test simulation</span>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href={`/candidate/applications/${app.id}`}
+                      className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                    >
+                      <span>View Timeline</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
                   </div>
                 </div>
               </div>

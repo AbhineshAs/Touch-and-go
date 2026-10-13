@@ -178,10 +178,10 @@ export default function EmployerDashboardPage() {
                 4 new applicants with &gt;80% criteria alignment awaiting recruiter screening.
               </p>
               <Link
-                href="/employer/jobs/job_01/pipeline"
+                href="/employer/jobs"
                 className="text-primary font-semibold hover:underline mt-1 inline-flex items-center gap-1"
               >
-                <span>Open Pipeline</span>
+                <span>View Job Pipeline</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
             </div>

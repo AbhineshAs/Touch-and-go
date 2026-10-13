@@ -33,7 +33,7 @@ import { Job, MatchResult } from "@/types";
 import { getJobBySlug } from "@/lib/api/jobs";
 import { getMatchEvidence } from "@/lib/api/matching";
 import { getCandidateProfile, toggleSaveJob, getSavedJobIds } from "@/lib/api/candidate";
-import { submitApplication } from "@/lib/api/applications";
+import { submitApplication, getApplications } from "@/lib/api/applications";
 import { formatSalaryRange, formatRelativeTime } from "@/lib/utils";
 
 export default function JobDetailsPage() {
@@ -48,7 +48,7 @@ export default function JobDetailsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Auth Gate state
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [authGateOpen, setAuthGateOpen] = useState(false);
   const [authGateAction, setAuthGateAction] = useState<"apply" | "save">("apply");
 
@@ -58,6 +58,7 @@ export default function JobDetailsPage() {
   const [consentGiven, setConsentGiven] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applicationSubmitted, setApplicationSubmitted] = useState<string | null>(null);
+  const [existingApplicationId, setExistingApplicationId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -65,24 +66,41 @@ export default function JobDetailsPage() {
       const j = await getJobBySlug(slug);
       if (j) {
         setJob(j);
-        const [match, profile, savedIds] = await Promise.all([
-          getMatchEvidence("prof_cand_01", j.id),
+        const [match, profile, savedIds, userApps] = await Promise.all([
+          getMatchEvidence(user?.id || "cand_active", j.id),
           getCandidateProfile(),
           getSavedJobIds(),
+          getApplications(user?.email || user?.id),
         ]);
         setMatchResult(match);
         setCandidateProfile(profile);
         setIsSaved(savedIds.includes(j.id));
+        const found = userApps.find((a) => a.jobId === j.id || a.jobSlug === j.slug);
+        if (found) {
+          setExistingApplicationId(found.id);
+        }
       }
       setIsLoading(false);
     }
     loadData();
-  }, [slug]);
+  }, [slug, user]);
+
+  useEffect(() => {
+    if (isApplyModalOpen) {
+      getCandidateProfile().then((p) => {
+        if (p) setCandidateProfile(p);
+      });
+    }
+  }, [isApplyModalOpen]);
 
   const handleApplyClick = () => {
     if (!isAuthenticated) {
       setAuthGateAction("apply");
       setAuthGateOpen(true);
+      return;
+    }
+    if (existingApplicationId) {
+      router.push(`/candidate/applications/${existingApplicationId}`);
       return;
     }
     setIsApplyModalOpen(true);
@@ -111,6 +129,12 @@ export default function JobDetailsPage() {
       answer: screeningAnswers[sq.id] || "Confirmed and acknowledged.",
     }));
 
+    const activeName = candidateProfile.fullName || user?.name || "Candidate";
+    const activeEmail = candidateProfile.email || user?.email || "";
+    const resumeDoc =
+      candidateProfile.resumeFileName ||
+      `${activeName.replace(/[^a-zA-Z0-9]/g, "_")}_Resume.pdf`;
+
     const app = await submitApplication(job.id, {
       jobSlug: job.slug,
       jobTitle: job.title,
@@ -119,17 +143,19 @@ export default function JobDetailsPage() {
       organizationLogo: job.organizationLogo,
       location: job.location,
       workMode: job.workMode,
-      candidateId: candidateProfile.id,
-      candidateName: candidateProfile.fullName,
-      candidateHeadline: candidateProfile.headline,
-      candidateEmail: candidateProfile.email,
-      candidateAvatar: candidateProfile.avatarUrl,
-      resumeFileName: candidateProfile.resumeFileName || "Ananya_Sharma_Resume.pdf",
+      candidateId: candidateProfile.id || user?.id || `cand_${Date.now()}`,
+      candidateName: activeName,
+      candidateHeadline: candidateProfile.headline || "Software Engineer",
+      candidateEmail: activeEmail,
+      candidateAvatar: candidateProfile.avatarUrl || user?.avatarUrl || "",
+      resumeFileName: resumeDoc,
       screeningAnswers: answers,
+      overallAlignment: matchResult?.overallAlignment || 78,
     });
 
     setIsSubmitting(false);
     setApplicationSubmitted(app.id);
+    setExistingApplicationId(app.id);
   };
 
   if (isLoading) {
@@ -192,11 +218,25 @@ export default function JobDetailsPage() {
             <div className="p-6 sm:p-8 rounded-2xl bg-surface border border-border shadow-xs flex flex-col gap-6">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <img
-                    src={job.organizationLogo}
-                    alt={job.organizationName}
-                    className="w-16 h-16 rounded-2xl object-cover border border-border shrink-0"
-                  />
+                  {job.organizationLogo ? (
+                    <img
+                      src={job.organizationLogo}
+                      alt={job.organizationName}
+                      className="w-16 h-16 rounded-2xl object-contain bg-white border border-border shrink-0 p-1"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = "none";
+                        const fallback = e.currentTarget.parentElement?.querySelector(".logo-fallback") as HTMLElement;
+                        if (fallback) fallback.classList.remove("hidden");
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`w-16 h-16 rounded-2xl bg-primary-soft text-primary font-bold flex items-center justify-center text-xl shrink-0 logo-fallback ${
+                      job.organizationLogo ? "hidden" : ""
+                    }`}
+                  >
+                    {(job.organizationName || "C").charAt(0).toUpperCase()}
+                  </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <Link
@@ -370,11 +410,11 @@ export default function JobDetailsPage() {
               <div className="flex flex-col gap-3">
                 <Button
                   size="lg"
-                  variant="primary"
+                  variant={existingApplicationId ? "secondary" : "primary"}
                   className="w-full text-base font-semibold shadow-xs"
                   onClick={handleApplyClick}
                 >
-                  Apply Now
+                  {existingApplicationId ? "View Submitted Application" : "Apply Now"}
                 </Button>
 
                 <Button
@@ -479,19 +519,32 @@ export default function JobDetailsPage() {
             {/* Candidate Summary Block */}
             <div className="p-4 rounded-xl bg-background border border-border flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <img
-                  src={candidateProfile?.avatarUrl}
-                  alt={candidateProfile?.fullName}
-                  className="w-10 h-10 rounded-full object-cover border border-border"
-                />
+                {candidateProfile?.avatarUrl ? (
+                  <img
+                    src={candidateProfile.avatarUrl}
+                    alt={candidateProfile.fullName}
+                    className="w-10 h-10 rounded-full object-cover border border-border shrink-0"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary-soft text-primary font-bold flex items-center justify-center text-sm border border-border shrink-0">
+                    {(candidateProfile?.fullName || user?.name || "C").charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className="flex flex-col">
-                  <span className="font-bold text-sm text-text-primary">{candidateProfile?.fullName}</span>
-                  <span className="text-text-muted">{candidateProfile?.headline}</span>
+                  <span className="font-bold text-sm text-text-primary">
+                    {candidateProfile?.fullName || user?.name || "Candidate"}
+                  </span>
+                  <span className="text-text-muted">
+                    {candidateProfile?.headline || "Software Engineer"}
+                  </span>
                 </div>
               </div>
               <div className="text-right">
                 <span className="text-[11px] font-semibold text-primary bg-primary-soft px-2.5 py-1 rounded-md border border-primary/20">
-                  {matchResult?.overallAlignment || 86}% Alignment
+                  {matchResult?.overallAlignment || 78}% Alignment
                 </span>
               </div>
             </div>
@@ -502,7 +555,10 @@ export default function JobDetailsPage() {
               <div className="p-3 rounded-lg border border-border bg-surface flex items-center justify-between">
                 <div className="flex items-center gap-2 text-text-primary font-medium">
                   <FileText className="w-4 h-4 text-primary" />
-                  <span>{candidateProfile?.resumeFileName || "Ananya_Sharma_Senior_Frontend_2026.pdf"}</span>
+                  <span>
+                    {candidateProfile?.resumeFileName ||
+                      `${(candidateProfile?.fullName || user?.name || "Candidate").replace(/[^a-zA-Z0-9]/g, "_")}_Resume.pdf`}
+                  </span>
                 </div>
                 <span className="text-text-muted text-[11px]">Structured & Verified</span>
               </div>
@@ -556,7 +612,7 @@ export default function JobDetailsPage() {
             {/* Consent Checkbox */}
             <div className="pt-4 border-t border-border">
               <Checkbox
-                label="I confirm the accuracy of my structured profile and authorize RazorWave Technologies hiring team to review my credentials."
+                label={`I confirm the accuracy of my structured profile and authorize ${job.organizationName} hiring team to review my credentials.`}
                 description="Your contact details will only be accessible to verified members of this organization."
                 checked={consentGiven}
                 onChange={(e) => setConsentGiven(e.target.checked)}
@@ -636,7 +692,7 @@ export default function JobDetailsPage() {
             className="px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>1-Touch Apply</span>
+            <span>{existingApplicationId ? "View Application" : "1-Touch Apply"}</span>
           </button>
         </div>
       </div>

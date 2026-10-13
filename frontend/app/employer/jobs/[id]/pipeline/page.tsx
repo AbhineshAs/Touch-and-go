@@ -8,22 +8,13 @@ import { SearchInput } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
 import { MatchBadge, StatusBadge } from "@/components/ui/Badge";
 import { LoadingState } from "@/components/ui/States";
-import { Application, ApplicationStage, Job } from "@/types";
+import { ResumePreviewModal } from "@/components/employer/ResumePreviewModal";
+import { Application, ApplicationStage, Job, CandidateProfile } from "@/types";
 import { getJobBySlug } from "@/lib/api/jobs";
 import { getApplicantsForJob, updateApplicationStage } from "@/lib/api/applications";
+import { resolveCandidateProfileByEmailOrId } from "@/lib/api/candidate";
 import { formatDate } from "@/lib/utils";
-import {
-  ArrowLeft,
-  Kanban,
-  List,
-  Search,
-  SlidersHorizontal,
-  ChevronDown,
-  User,
-  CheckCircle2,
-  Calendar,
-  MessageSquare,
-} from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 
 const PIPELINE_STAGES: ApplicationStage[] = [
   "Applied",
@@ -31,6 +22,7 @@ const PIPELINE_STAGES: ApplicationStage[] = [
   "Shortlisted",
   "Interview",
   "Decision",
+  "Closed",
 ];
 
 export default function ApplicantPipelinePage() {
@@ -40,9 +32,13 @@ export default function ApplicantPipelinePage() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [applicants, setApplicants] = useState<Application[]>([]);
-  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Resume Modal State
+  const [activeResumeApp, setActiveResumeApp] = useState<Application | null>(null);
+  const [activeResumeProfile, setActiveResumeProfile] = useState<CandidateProfile | null>(null);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -53,14 +49,30 @@ export default function ApplicantPipelinePage() {
       setIsLoading(false);
     }
     load();
+
+    const handleUpdate = () => {
+      getApplicantsForJob(jobId).then(setApplicants);
+    };
+    window.addEventListener("tag_applications_updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("tag_applications_updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
   }, [jobId]);
 
   const handleStageChange = async (appId: string, newStage: ApplicationStage) => {
-    // Optimistically update
     setApplicants((prev) =>
       prev.map((a) => (a.id === appId ? { ...a, stage: newStage } : a))
     );
     await updateApplicationStage(appId, newStage);
+  };
+
+  const handleOpenResume = (app: Application) => {
+    const profile = resolveCandidateProfileByEmailOrId(app.candidateEmail, app.candidateId);
+    setActiveResumeApp(app);
+    setActiveResumeProfile(profile);
+    setIsResumeModalOpen(true);
   };
 
   const filteredApplicants = applicants.filter(
@@ -69,12 +81,26 @@ export default function ApplicantPipelinePage() {
       a.candidateHeadline.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (isLoading || !job) {
+  if (isLoading) {
     return <LoadingState message="Loading applicant pipeline..." />;
   }
 
+  if (!job) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-2xl border border-border">
+        <h2 className="text-xl font-bold text-text-primary mb-2">Job Pipeline Not Found</h2>
+        <p className="text-sm text-text-secondary mb-4">
+          The requested job does not exist or has been removed. Please select an active job from your listings.
+        </p>
+        <Link href="/employer/jobs">
+          <Button variant="primary">Back to Job Listings</Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-7xl mx-auto pb-16">
       {/* Pipeline Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div className="flex flex-col gap-1">
@@ -86,213 +112,156 @@ export default function ApplicantPipelinePage() {
             <span>Back to Job Listings</span>
           </Link>
           <div className="flex items-center gap-2 mt-0.5">
-            <h1 className="text-2xl font-bold tracking-tight text-text-primary">
+            <h1 className="text-2xl font-black tracking-tight text-text-primary">
               {job.title}
             </h1>
-            <span className="text-xs font-semibold text-text-muted bg-border-subtle px-2.5 py-0.5 rounded">
+            <span className="text-xs font-semibold text-text-muted bg-border-subtle px-2.5 py-0.5 rounded-full border border-border">
               Pipeline ({applicants.length})
             </span>
           </div>
         </div>
 
-        {/* View mode toggle */}
-        <div className="flex items-center gap-2">
-          <div className="p-1 bg-border-subtle rounded-lg flex items-center gap-1">
-            <button
-              onClick={() => setViewMode("kanban")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                viewMode === "kanban"
-                  ? "bg-surface text-primary shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              <Kanban className="w-3.5 h-3.5" />
-              <span>Kanban</span>
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
-                viewMode === "list"
-                  ? "bg-surface text-primary shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
-              }`}
-            >
-              <List className="w-3.5 h-3.5" />
-              <span>Table List</span>
-            </button>
-          </div>
+        {/* All Applicants Link */}
+        <div className="flex items-center gap-3">
+          <Link href="/employer/candidates">
+            <Button size="sm" variant="outline" className="text-xs font-bold">
+              All Applicants ({applicants.length})
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="w-full sm:w-80">
-        <SearchInput
-          placeholder="Filter candidate name or skills..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onClear={() => setSearch("")}
-        />
+      {/* Filter / Search Bar */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="max-w-md w-full">
+          <SearchInput
+            placeholder="Filter candidate name or skills..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
       </div>
 
-      {/* KANBAN VIEW */}
-      {viewMode === "kanban" ? (
-        <div className="flex flex-row overflow-x-auto gap-4 pb-4 snap-x snap-mandatory scrollbar-thin">
-          {PIPELINE_STAGES.map((stg) => {
-            const stageApplicants = filteredApplicants.filter((a) => a.stage === stg);
-            return (
-              <div
-                key={stg}
-                className="flex flex-col gap-3 min-w-[240px] bg-background/60 p-3 rounded-xl border border-border"
-              >
-                {/* Column Header */}
-                <div className="flex items-center justify-between pb-2 border-b border-border">
-                  <span className="text-xs font-bold text-text-primary uppercase tracking-wider">
-                    {stg}
-                  </span>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-surface border border-border text-text-secondary">
-                    {stageApplicants.length}
-                  </span>
-                </div>
-
-                {/* Candidate Cards */}
-                <div className="flex flex-col gap-3">
-                  {stageApplicants.map((app) => (
-                    <Card
-                      key={app.id}
-                      hoverable
-                      className="p-4 bg-surface border-border flex flex-col gap-3 cursor-default"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5">
-                          <img
-                            src={app.candidateAvatar}
-                            alt={app.candidateName}
-                            className="w-9 h-9 rounded-full object-cover border border-border shrink-0"
-                          />
-                          <div className="flex flex-col">
-                            <Link href={`/employer/candidates/${app.id}`}>
-                              <h4 className="text-xs font-bold text-text-primary hover:text-primary transition-colors">
-                                {app.candidateName}
-                              </h4>
-                            </Link>
-                            <span className="text-[10px] text-text-muted line-clamp-1">
-                              {app.candidateHeadline}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-1">
-                        <MatchBadge score={app.overallAlignment} size="sm" />
-                        <span className="text-[10px] text-text-muted">
-                          {formatDate(app.appliedAt)}
-                        </span>
-                      </div>
-
-                      {/* Accessible Stage Change Menu */}
-                      <div className="pt-2 border-t border-border-subtle flex items-center justify-between text-xs">
-                        <span className="text-[10px] text-text-muted font-medium">Stage:</span>
-                        <select
-                          value={app.stage}
-                          onChange={(e) =>
-                            handleStageChange(app.id, e.target.value as ApplicationStage)
-                          }
-                          className="text-[11px] font-semibold bg-background border border-border rounded-md px-2 py-1 text-text-primary cursor-pointer focus:border-primary"
-                        >
-                          {PIPELINE_STAGES.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <Link href={`/employer/candidates/${app.id}`}>
-                        <Button size="sm" variant="outline" className="w-full text-xs">
-                          Inspect Evidence
-                        </Button>
-                      </Link>
-                    </Card>
-                  ))}
-
-                  {stageApplicants.length === 0 && (
-                    <div className="py-8 text-center text-xs text-text-muted border border-dashed border-border rounded-lg">
-                      No candidates
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* TABLE LIST VIEW */
-        <Card className="bg-surface border-border overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-background border-b border-border text-text-secondary uppercase tracking-wider text-[10px] font-bold">
-                <tr>
-                  <th className="p-4">Candidate</th>
-                  <th className="p-4">Criteria Alignment</th>
-                  <th className="p-4">Stage</th>
-                  <th className="p-4">Applied Date</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-subtle">
-                {filteredApplicants.map((app) => (
-                  <tr key={app.id} className="hover:bg-background/50 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
+      {/* TABLE LIST VIEW ONLY */}
+      <Card className="bg-surface border-border overflow-hidden shadow-xs">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-background border-b border-border text-text-secondary uppercase tracking-wider text-[10px] font-bold">
+              <tr>
+                <th className="p-4">Candidate</th>
+                <th className="p-4">Criteria Alignment</th>
+                <th className="p-4">Stage</th>
+                <th className="p-4">Applied Date</th>
+                <th className="p-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-subtle">
+              {filteredApplicants.map((app) => (
+                <tr key={app.id} className="hover:bg-background/50 transition-colors">
+                  <td className="p-4">
+                    <div className="flex items-center gap-3">
+                      {app.candidateAvatar ? (
                         <img
                           src={app.candidateAvatar}
                           alt={app.candidateName}
                           className="w-8 h-8 rounded-full object-cover border border-border shrink-0"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = "none";
+                            const fallback = e.currentTarget.parentElement?.querySelector(".avatar-fallback") as HTMLElement;
+                            if (fallback) fallback.classList.remove("hidden");
+                          }}
                         />
-                        <div className="flex flex-col">
-                          <Link
-                            href={`/employer/candidates/${app.id}`}
-                            className="font-bold text-text-primary hover:text-primary transition-colors"
-                          >
-                            {app.candidateName}
-                          </Link>
-                          <span className="text-[11px] text-text-muted">{app.candidateHeadline}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <MatchBadge score={app.overallAlignment} size="sm" />
-                    </td>
-                    <td className="p-4">
-                      <select
-                        value={app.stage}
-                        onChange={(e) =>
-                          handleStageChange(app.id, e.target.value as ApplicationStage)
-                        }
-                        className="text-xs font-semibold bg-background border border-border rounded-md px-2 py-1 text-text-primary cursor-pointer"
+                      ) : null}
+                      <div
+                        className={`w-8 h-8 rounded-full bg-primary-soft text-primary font-bold flex items-center justify-center text-xs border border-border shrink-0 avatar-fallback ${
+                          app.candidateAvatar ? "hidden" : ""
+                        }`}
                       >
-                        {PIPELINE_STAGES.map((s) => (
-                          <option key={s} value={s}>
-                            {s}
-                          </option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="p-4 text-text-muted">{formatDate(app.appliedAt)}</td>
-                    <td className="p-4 text-right">
+                        {(app.candidateName || "C").charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <Link
+                          href={`/employer/candidates/${app.id}`}
+                          className="font-bold text-text-primary hover:text-primary transition-colors"
+                        >
+                          {app.candidateName}
+                        </Link>
+                        <span className="text-[11px] text-text-muted">{app.candidateHeadline}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="p-4">
+                    <MatchBadge score={app.overallAlignment} size="sm" />
+                  </td>
+
+                  <td className="p-4">
+                    <select
+                      value={app.stage}
+                      onChange={(e) =>
+                        handleStageChange(app.id, e.target.value as ApplicationStage)
+                      }
+                      className={`text-xs font-bold rounded-lg px-2.5 py-1 border transition-colors cursor-pointer focus:outline-none ${
+                        app.stage === "Shortlisted"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : app.stage === "Interview"
+                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                          : app.stage === "Closed"
+                          ? "bg-slate-100 text-slate-600 border-slate-200"
+                          : "bg-blue-50 text-primary border-blue-200"
+                      }`}
+                    >
+                      {PIPELINE_STAGES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  <td className="p-4 text-text-muted">{formatDate(app.appliedAt)}</td>
+
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {/* View Resume Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenResume(app)}
+                        title="View Resume"
+                        className="p-1.5 rounded-lg border border-border bg-surface hover:bg-surface-muted text-text-primary transition-colors flex items-center gap-1 cursor-pointer text-xs font-semibold"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-primary" />
+                        <span className="hidden md:inline">Resume</span>
+                      </button>
+
+                      {/* View Profile */}
                       <Link href={`/employer/candidates/${app.id}`}>
-                        <Button size="sm" variant="secondary">
-                          Review Profile
+                        <Button size="sm" variant="primary" className="text-xs">
+                          Profile
                         </Button>
                       </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredApplicants.length === 0 && (
+          <div className="py-12 text-center text-xs text-text-muted">
+            No candidates found matching filter criteria.
           </div>
-        </Card>
-      )}
+        )}
+      </Card>
+
+      {/* RESUME PREVIEW MODAL */}
+      <ResumePreviewModal
+        isOpen={isResumeModalOpen}
+        onClose={() => setIsResumeModalOpen(false)}
+        candidateProfile={activeResumeProfile}
+        application={activeResumeApp}
+      />
     </div>
   );
 }

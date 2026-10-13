@@ -38,6 +38,8 @@ import { buildActionPlan, reconcileTasks } from "../plan/budget";
 import { computeProfileCompleteness } from "../profile/completeness";
 import { deriveProfileSuggestions } from "../profile/suggestions";
 import { matchSampleJobs } from "../jobs/matcher";
+import { Job } from "@/types";
+import { getLiveJobs } from "@/lib/api/jobs";
 import { MOCK_CANDIDATE_PROFILE, MOCK_APPLICATIONS, MOCK_INTERVIEWS } from "@/lib/mocks/data";
 import {
   AUTH_TOKEN_KEY,
@@ -113,6 +115,7 @@ export interface CandidateContextType {
   completeness: ProfileCompleteness;
   suggestions: ProfileSuggestion[];
   matchedJobs: JobMatchResult[];
+  availableJobs: Job[];
 
   // Recommendations & Feedback
   recommendations: Recommendation[];
@@ -295,10 +298,78 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
 
   // Canonical candidate record
   const [candidateRecord, setCandidateRecord] = useState<CandidateRecord | null>(null);
+  const [availableJobs, setAvailableJobs] = useState<Job[]>([]);
   const [uploadedResume, setUploadedResume] = useState<UploadedResume | null>(null);
   const [feedback, setFeedbackState] = useState<Feedback>({ ...defaultFeedback });
   const [tasks, setTasksState] = useState<PlanTask[]>([]);
   const [lastUpdateNotice, setLastUpdateNoticeState] = useState<string | null>(null);
+
+  // Sync available employer jobs from storage
+  useEffect(() => {
+    const syncJobs = () => {
+      setAvailableJobs(getLiveJobs());
+    };
+    syncJobs();
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", syncJobs);
+      window.addEventListener("tag_jobs_updated", syncJobs);
+      return () => {
+        window.removeEventListener("storage", syncJobs);
+        window.removeEventListener("tag_jobs_updated", syncJobs);
+      };
+    }
+  }, []);
+
+  // Sync candidate applications from storage in real time
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncApplications = () => {
+      try {
+        const rawAuth = localStorage.getItem(AUTH_USER_KEY);
+        let authUser: any = null;
+        if (rawAuth) {
+          try {
+            authUser = JSON.parse(rawAuth);
+          } catch {}
+        }
+        const activeEmail = authUser?.email?.trim().toLowerCase();
+        const storedAppsStr = localStorage.getItem("tag_applications_storage");
+        if (storedAppsStr && activeEmail) {
+          const storedApps = JSON.parse(storedAppsStr);
+          const userApps: CandidateApplication[] = storedApps
+            .filter((a: any) => a.candidateEmail?.toLowerCase() === activeEmail)
+            .map((ua: any) => ({
+              id: ua.id,
+              jobId: ua.jobId,
+              jobTitle: ua.jobTitle,
+              organizationName: ua.organizationName,
+              organizationLogo: ua.organizationLogo,
+              location: ua.location,
+              workMode: ua.workMode,
+              appliedAt: ua.appliedAt,
+              stage: ua.stage,
+            }));
+
+          setCandidateRecord((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              applications: userApps,
+            };
+          });
+        }
+      } catch (e) {
+        console.warn("Error syncing applications to CandidateContext:", e);
+      }
+    };
+
+    window.addEventListener("tag_applications_updated", syncApplications);
+    window.addEventListener("tag_candidate_record_updated", syncApplications);
+    return () => {
+      window.removeEventListener("tag_applications_updated", syncApplications);
+      window.removeEventListener("tag_candidate_record_updated", syncApplications);
+    };
+  }, []);
 
   // In-session candidate database to test switching or multiple accounts without cross-leakage
   const [sessionCandidates, setSessionCandidates] = useState<Record<string, CandidateRecord>>({});
@@ -351,6 +422,51 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (activeRecord) {
+        if (activeRecord.savedJobIds) {
+          activeRecord.savedJobIds = activeRecord.savedJobIds.filter(
+            (id) => !id.startsWith("job_0") && !id.startsWith("job_sample_")
+          );
+        }
+        if (activeRecord.applications) {
+          activeRecord.applications = activeRecord.applications.filter(
+            (a) => !a.jobId.startsWith("job_0") && !a.jobId.startsWith("job_sample_") && !a.id.startsWith("app_0")
+          );
+        }
+        if (activeRecord.interviews) {
+          activeRecord.interviews = activeRecord.interviews.filter(
+            (i) => !i.id.startsWith("int_0") && !i.applicationId.startsWith("app_0")
+          );
+        }
+
+        // Merge applications from tag_applications_storage
+        const storedAppsStr = localStorage.getItem("tag_applications_storage");
+        if (storedAppsStr && activeEmail) {
+          try {
+            const storedApps = JSON.parse(storedAppsStr);
+            const userApps = storedApps.filter(
+              (a: any) => a.candidateEmail?.toLowerCase() === activeEmail
+            );
+            const existing = activeRecord.applications || [];
+            const merged = [...existing];
+            for (const ua of userApps) {
+              if (!merged.some((m) => m.jobId === ua.jobId || m.id === ua.id)) {
+                merged.unshift({
+                  id: ua.id,
+                  jobId: ua.jobId,
+                  jobTitle: ua.jobTitle,
+                  organizationName: ua.organizationName,
+                  organizationLogo: ua.organizationLogo,
+                  location: ua.location,
+                  workMode: ua.workMode,
+                  appliedAt: ua.appliedAt,
+                  stage: ua.stage,
+                });
+              }
+            }
+            activeRecord.applications = merged;
+          } catch {}
+        }
+
         if (
           authUser?.name &&
           authUser.name.toLowerCase() !== activeRecord.identity.fullName.toLowerCase() &&
@@ -392,6 +508,73 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
             agreeToTerms: true,
           });
           setPhoneVerifiedState(true);
+        }
+
+        if (authUser && (authUser.role === "candidate" || !authUser.role)) {
+          const userApps: CandidateApplication[] = [];
+          const storedAppsStr = localStorage.getItem("tag_applications_storage");
+          if (storedAppsStr && activeEmail) {
+            try {
+              const storedApps = JSON.parse(storedAppsStr);
+              for (const ua of storedApps) {
+                if (ua.candidateEmail?.toLowerCase() === activeEmail) {
+                  userApps.push({
+                    id: ua.id,
+                    jobId: ua.jobId,
+                    jobTitle: ua.jobTitle,
+                    organizationName: ua.organizationName,
+                    organizationLogo: ua.organizationLogo,
+                    location: ua.location,
+                    workMode: ua.workMode,
+                    appliedAt: ua.appliedAt,
+                    stage: ua.stage,
+                  });
+                }
+              }
+            } catch {}
+          }
+
+          const baseRecord: CandidateRecord = {
+            id: authUser.id || `cand_${Date.now()}`,
+            schemaVersion: "1.0.0",
+            profileRevision: 1,
+            onboardingComplete: false,
+            confirmedAt: new Date().toISOString(),
+            identity: {
+              fullName: authUser.name || "Candidate",
+              email: authUser.email,
+              countryCode: authUser.country_code || "+91",
+              phone: authUser.phone || "",
+              agreeToTerms: true,
+            },
+            discovery: { ...initialDiscoveryDraft },
+            profile: {
+              headline: "Software Engineer",
+              summary: "",
+              location: "India",
+              phone: authUser.phone || "",
+              education: [],
+              experience: [],
+              projects: [],
+              certifications: [],
+              skills: [],
+              links: [],
+              jobPreferences: {
+                desiredRoles: [],
+                preferredLocations: ["Bengaluru", "Remote"],
+                desiredWorkModes: ["hybrid", "remote"],
+                employmentTypes: ["full_time"],
+                availability: "immediate",
+                salaryCurrency: "INR",
+                salaryPeriod: "year",
+              },
+            },
+            applications: userApps,
+            savedJobIds: [],
+            interviews: [],
+          };
+          activeRecord = baseRecord;
+          setCandidateRecord(activeRecord);
         }
       }
 
@@ -586,8 +769,8 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
 
   const matchedJobs = useMemo(() => {
     if (!candidateRecord) return [];
-    return matchSampleJobs(candidateRecord);
-  }, [candidateRecord]);
+    return matchSampleJobs(candidateRecord, availableJobs);
+  }, [candidateRecord, availableJobs]);
 
   const savedJobIds = useMemo(() => {
     return candidateRecord?.savedJobIds || [];
@@ -1051,9 +1234,9 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
         if (!prev) return null;
         if (prev.applications.some((a) => a.jobId === jobId)) return prev;
 
-        const allMatched = matchSampleJobs(prev);
+        const allMatched = matchSampleJobs(prev, availableJobs);
         const matchedItem = allMatched.find((m) => m.job.id === jobId);
-        const job = matchedItem?.job;
+        const job = availableJobs.find((j) => j.id === jobId || j.slug === jobId) || matchedItem?.job;
 
         const newApp: CandidateApplication = {
           id: `app_${Date.now()}`,
@@ -1068,13 +1251,57 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
           notes,
         };
 
+        if (typeof window !== "undefined") {
+          try {
+            const storedAppsStr = localStorage.getItem("tag_applications_storage");
+            let storedApps = storedAppsStr ? JSON.parse(storedAppsStr) : [];
+            if (!storedApps.some((a: any) => a.id === newApp.id || a.jobId === newApp.jobId)) {
+              storedApps.unshift({
+                id: newApp.id,
+                jobId: newApp.jobId,
+                jobSlug: job?.slug || jobId,
+                jobTitle: newApp.jobTitle,
+                organizationId: job?.organizationId || "org_01",
+                organizationName: newApp.organizationName,
+                organizationLogo: newApp.organizationLogo || "",
+                location: newApp.location,
+                workMode: (newApp.workMode as any) || "Remote",
+                candidateId: prev.id,
+                candidateName: prev.identity.fullName,
+                candidateHeadline: prev.profile?.headline || "Software Engineer",
+                candidateEmail: prev.identity.email,
+                candidateAvatar: prev.uploadedResume?.dataUrl || "",
+                appliedAt: newApp.appliedAt,
+                stage: "Applied",
+                overallAlignment: 78,
+                resumeFileName:
+                  prev.uploadedResume?.fileName ||
+                  `${prev.identity.fullName.replace(/\s+/g, "_")}_Resume.pdf`,
+                timeline: [
+                  {
+                    id: `tl_${Date.now()}`,
+                    stage: "Applied",
+                    title: "Application Submitted",
+                    description: `Profile submitted directly to ${newApp.organizationName}.`,
+                    date: new Date().toISOString(),
+                    completed: true,
+                    active: true,
+                  },
+                ],
+              });
+              localStorage.setItem("tag_applications_storage", JSON.stringify(storedApps));
+              window.dispatchEvent(new CustomEvent("tag_applications_updated"));
+            }
+          } catch {}
+        }
+
         return {
           ...prev,
           applications: [newApp, ...prev.applications],
         };
       });
     },
-    []
+    [availableJobs]
   );
 
   // Resume Draft Actions
@@ -1399,30 +1626,9 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
             salaryPeriod: "year",
           },
         },
-        applications: MOCK_APPLICATIONS.map((app) => ({
-          id: app.id,
-          jobId: app.jobId,
-          jobTitle: app.jobTitle,
-          organizationName: app.organizationName,
-          organizationLogo: app.organizationLogo,
-          location: app.location,
-          workMode: app.workMode,
-          appliedAt: app.appliedAt,
-          stage: app.stage,
-        })),
-        savedJobIds: ["job_01", "job_06"],
-        interviews: MOCK_INTERVIEWS.map((i) => ({
-          id: i.id,
-          applicationId: i.applicationId,
-          jobTitle: i.jobTitle,
-          organizationName: (i as any).organizationName || "RazorWave Technologies",
-          interviewerName: i.interviewerName,
-          interviewerRole: i.interviewerRole,
-          scheduledAt: i.scheduledAt,
-          durationMinutes: i.durationMinutes,
-          meetingLink: i.meetingLink,
-          status: i.status,
-        })),
+        applications: [],
+        savedJobIds: [],
+        interviews: [],
 
       };
 
@@ -1773,6 +1979,7 @@ export function CandidateProvider({ children }: { children: React.ReactNode }) {
         completeness,
         suggestions,
         matchedJobs,
+        availableJobs,
         recommendations,
         feedback,
         saveRecommendation,

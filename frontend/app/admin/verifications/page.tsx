@@ -82,11 +82,25 @@ export default function AdminVerificationsPage() {
                 <tr key={org.id} className="hover:bg-background/50 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-3">
-                      <img
-                        src={org.logo}
-                        alt={org.name}
-                        className="w-9 h-9 rounded-lg object-cover border border-border shrink-0"
-                      />
+                      {org.logo ? (
+                        <img
+                          src={org.logo}
+                          alt={org.name}
+                          className="w-9 h-9 rounded-lg object-contain bg-white border border-border shrink-0 p-0.5"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLElement).style.display = "none";
+                            const fallback = e.currentTarget.parentElement?.querySelector(".logo-fallback") as HTMLElement;
+                            if (fallback) fallback.classList.remove("hidden");
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className={`w-9 h-9 rounded-lg bg-primary-soft text-primary font-bold flex items-center justify-center text-xs border border-border shrink-0 logo-fallback ${
+                          org.logo ? "hidden" : ""
+                        }`}
+                      >
+                        {(org.name || "C").charAt(0).toUpperCase()}
+                      </div>
                       <div className="flex flex-col">
                         <span className="font-bold text-text-primary">{org.name}</span>
                         <span className="text-[11px] text-text-muted">{org.verification.registeredEntityName}</span>

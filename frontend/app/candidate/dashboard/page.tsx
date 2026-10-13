@@ -382,15 +382,15 @@ export default function CandidateDashboardPage() {
         </div>
       </Card>
 
-      {/* 4. Two-Column Split: Profile-Matched Sample Opportunities + Applications */}
+      {/* 4. Two-Column Split: Profile-Matched Opportunities + Applications */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        {/* Recommended Sample Opportunities */}
+        {/* Recommended Opportunities */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-primary" />
               <h2 className="text-base font-bold text-text-primary">
-                Recommended Sample Opportunities
+                Recommended Opportunities
               </h2>
             </div>
             <Link
@@ -412,11 +412,20 @@ export default function CandidateDashboardPage() {
                   <Card key={job.id} hoverable className="p-4 sm:p-5 flex flex-col gap-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={job.organizationLogo}
-                          alt={job.organizationName}
-                          className="w-10 h-10 rounded-xl object-cover border border-border shrink-0"
-                        />
+                        {job.organizationLogo ? (
+                          <img
+                            src={job.organizationLogo}
+                            alt={job.organizationName}
+                            className="w-10 h-10 rounded-xl object-contain p-0.5 border border-border shrink-0 bg-white"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center text-xs border border-border shrink-0">
+                            {job.organizationName ? job.organizationName.charAt(0).toUpperCase() : "C"}
+                          </div>
+                        )}
                         <div className="flex flex-col">
                           <span className="text-xs font-medium text-text-muted">
                             {job.organizationName}
@@ -489,9 +498,9 @@ export default function CandidateDashboardPage() {
             ) : (
               <div className="p-6 rounded-2xl bg-surface border border-border text-center flex flex-col items-center gap-3">
                 <Info className="w-8 h-8 text-text-muted" />
-                <h3 className="text-sm font-bold text-text-primary">No Matching Sample Roles</h3>
+                <h3 className="text-sm font-bold text-text-primary">No Matching Roles</h3>
                 <p className="text-xs text-text-muted max-w-sm">
-                  We could not find sample positions strictly matching your stated filters.
+                  We could not find open positions matching your stated filters or no jobs have been posted yet.
                 </p>
                 <div className="flex items-center gap-3 pt-2">
                   <Link href="/candidate/profile">
@@ -501,7 +510,7 @@ export default function CandidateDashboardPage() {
                   </Link>
                   <Link href="/candidate/jobs">
                     <Button size="sm" variant="primary">
-                      Browse All Sample Jobs
+                      Browse All Jobs
                     </Button>
                   </Link>
                 </div>

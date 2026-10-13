@@ -32,6 +32,8 @@ export default function JobBuilderPage() {
   const [minSalary, setMinSalary] = useState("2400000");
   const [maxSalary, setMaxSalary] = useState("3200000");
   const [experienceLevel, setExperienceLevel] = useState("Mid (3-5 yrs)");
+  const [deadline, setDeadline] = useState("2026-11-30");
+  const [status, setStatus] = useState<"Published" | "Draft">("Published");
 
   // Step 2 - Description
   const [summary, setSummary] = useState(
@@ -92,10 +94,11 @@ export default function JobBuilderPage() {
       mustHaveSkills,
       preferredSkills,
       screeningQuestions: [],
-      status: "Published",
+      deadline,
+      status: status as any,
     });
     setIsSubmitting(false);
-    router.push(`/employer/jobs/${newJob.id}/pipeline`);
+    router.push(`/employer/jobs/${newJob.id}`);
   };
 
   return (
@@ -223,6 +226,44 @@ export default function JobBuilderPage() {
                 onChange={(e) => setMaxSalary(e.target.value)}
                 placeholder="3200000"
               />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary">Experience Required</label>
+                <select
+                  value={experienceLevel}
+                  onChange={(e) => setExperienceLevel(e.target.value)}
+                  className="rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:border-primary"
+                >
+                  <option value="Entry (0-2 yrs)">Entry (0-2 yrs)</option>
+                  <option value="Mid (3-5 yrs)">Mid (3-5 yrs)</option>
+                  <option value="Senior (6-8 yrs)">Senior (6-8 yrs)</option>
+                  <option value="Lead (8+ yrs)">Lead (8+ yrs)</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary">Application Deadline</label>
+                <input
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:border-primary"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-text-secondary">Listing Status</label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as "Published" | "Draft")}
+                  className="rounded-lg border border-border bg-surface p-2 text-xs text-text-primary focus:border-primary"
+                >
+                  <option value="Published">Published (Active)</option>
+                  <option value="Draft">Save as Draft</option>
+                </select>
+              </div>
             </div>
           </Card>
         )}
@@ -428,11 +469,21 @@ export default function JobBuilderPage() {
                 <MatchBadge score={86} size="md" />
               </div>
 
-              <div className="p-4 rounded-xl bg-background border border-border-subtle text-xs">
-                <span className="text-text-muted">Compensation: </span>
-                <strong className="text-text-primary">
-                  {formatSalaryRange(parseInt(minSalary) || undefined, parseInt(maxSalary) || undefined)}
-                </strong>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl bg-background border border-border-subtle text-xs">
+                <div>
+                  <span className="text-text-muted block text-[11px]">Compensation</span>
+                  <strong className="text-text-primary">
+                    {formatSalaryRange(parseInt(minSalary) || undefined, parseInt(maxSalary) || undefined)}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-text-muted block text-[11px]">Experience</span>
+                  <strong className="text-text-primary">{experienceLevel}</strong>
+                </div>
+                <div>
+                  <span className="text-text-muted block text-[11px]">Application Deadline</span>
+                  <strong className="text-text-primary">{deadline ? new Date(deadline).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : "Open until filled"}</strong>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2">

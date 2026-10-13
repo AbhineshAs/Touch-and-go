@@ -130,8 +130,15 @@ export const SAMPLE_JOBS_CATALOGUE: Job[] = [
  */
 export function matchSampleJobs(
   candidate: CandidateRecord,
-  jobsCatalogue: Job[] = SAMPLE_JOBS_CATALOGUE
+  jobsCatalogue?: Job[]
 ): JobMatchResult[] {
+  const catalogue =
+    jobsCatalogue !== undefined
+      ? jobsCatalogue
+      : typeof window !== "undefined"
+      ? []
+      : SAMPLE_JOBS_CATALOGUE;
+
   // Collect candidate normalized skills
   const candidateSkillNames = new Set<string>();
   for (const s of candidate.discovery?.skills || []) {
@@ -157,7 +164,7 @@ export function matchSampleJobs(
 
   const results: JobMatchResult[] = [];
 
-  for (const job of jobsCatalogue) {
+  for (const job of catalogue) {
     const jobWorkMode = job.workMode.toLowerCase();
     const jobEmpType = job.employmentType.toLowerCase().replace("-", "_");
 

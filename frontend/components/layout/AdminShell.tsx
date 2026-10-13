@@ -159,11 +159,25 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <div className="pt-4 border-t border-black/10">
             <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
               <div className="flex items-center gap-2.5 overflow-hidden">
-                <img
-                  src={user.avatarUrl}
-                  alt={user.name}
-                  className="w-8.5 h-8.5 rounded-full object-cover shrink-0 border border-slate-200"
-                />
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="w-8.5 h-8.5 rounded-full object-cover shrink-0 border border-slate-200"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                      const fallback = e.currentTarget.parentElement?.querySelector(".avatar-fallback") as HTMLElement;
+                      if (fallback) fallback.classList.remove("hidden");
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`w-8.5 h-8.5 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xs shrink-0 avatar-fallback ${
+                    user.avatarUrl ? "hidden" : ""
+                  }`}
+                >
+                  {(user.name || "A").charAt(0).toUpperCase()}
+                </div>
                 <div className="flex flex-col overflow-hidden">
                   <span className="text-xs font-bold text-slate-900 truncate">{user.name}</span>
                   <span className="text-[10px] text-[#0A66C2] font-semibold truncate">

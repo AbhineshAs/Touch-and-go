@@ -48,13 +48,13 @@ export default function RecommendedJobsPage() {
         <div className="flex flex-col gap-2 max-w-xl">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-soft text-primary-dark font-semibold text-xs border border-primary/20 w-fit">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            <span>Profile-Matched Sample Opportunities</span>
+            <span>Profile-Matched Open Opportunities</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-text-primary">
             Recommended For You
           </h1>
           <p className="text-xs sm:text-sm text-text-secondary leading-relaxed">
-            These sample positions match your confirmed focus in{" "}
+            These positions match your confirmed focus in{" "}
             <strong className="text-text-primary">{targetRolesStr}</strong>. Every match provides explicit, factual reasons rather than unexplained scores.
           </p>
         </div>
@@ -71,10 +71,10 @@ export default function RecommendedJobsPage() {
       {matchedJobs.length === 0 ? (
         <EmptyState
           title="No recommendations currently available"
-          description="Update your skills and target preferences in your profile to view tailored criteria matches."
+          description="When employers publish open positions matching your stated focus, they will appear here with transparent alignment reasoning."
           action={{
-            label: "Update Profile",
-            onClick: () => (window.location.href = "/candidate/profile"),
+            label: "Explore All Jobs",
+            onClick: () => (window.location.href = "/candidate/jobs"),
           }}
         />
       ) : (
@@ -87,11 +87,20 @@ export default function RecommendedJobsPage() {
               <Card key={job.id} hoverable className="p-6 bg-surface border-border flex flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <img
-                      src={job.organizationLogo}
-                      alt={job.organizationName}
-                      className="w-12 h-12 rounded-xl object-cover border border-border shrink-0"
-                    />
+                    {job.organizationLogo ? (
+                      <img
+                        src={job.organizationLogo}
+                        alt={job.organizationName}
+                        className="w-12 h-12 rounded-xl object-contain p-0.5 border border-border shrink-0 bg-white"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center text-sm border border-border shrink-0">
+                        {job.organizationName ? job.organizationName.charAt(0).toUpperCase() : "C"}
+                      </div>
+                    )}
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-text-secondary">
@@ -100,8 +109,8 @@ export default function RecommendedJobsPage() {
                         {job.organizationVerified && (
                           <ShieldCheck className="w-3.5 h-3.5 text-success" />
                         )}
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-border-subtle text-text-muted font-medium">
-                          Sample Job
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-primary-soft text-primary font-medium">
+                          {job.employmentType || "Full-time"}
                         </span>
                       </div>
                       <Link href={`/jobs/${job.slug}`}>

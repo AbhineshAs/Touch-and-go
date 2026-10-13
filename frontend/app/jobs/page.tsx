@@ -72,6 +72,18 @@ function JobsSearchContent() {
   }, [keyword, location, selectedWorkModes, selectedTypes, selectedLevels, sortBy]);
 
   useEffect(() => {
+    const handleSync = () => {
+      fetchJobs();
+    };
+    window.addEventListener("tag_jobs_updated", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("tag_jobs_updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
+  }, [keyword, location, selectedWorkModes, selectedTypes, selectedLevels, sortBy]);
+
+  useEffect(() => {
     getSavedJobIds().then(setSavedJobIds);
   }, []);
 
@@ -299,11 +311,25 @@ function JobsSearchContent() {
                         {/* Header line */}
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5">
-                            <img
-                              src={job.organizationLogo}
-                              alt={job.organizationName}
-                              className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0 shadow-2xs"
-                            />
+                            {job.organizationLogo ? (
+                              <img
+                                src={job.organizationLogo}
+                                alt={job.organizationName}
+                                className="w-12 h-12 rounded-xl object-contain bg-white border border-slate-200 shrink-0 shadow-2xs p-1"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = "none";
+                                  const fallback = e.currentTarget.parentElement?.querySelector(".logo-fallback") as HTMLElement;
+                                  if (fallback) fallback.classList.remove("hidden");
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              className={`w-12 h-12 rounded-xl bg-blue-50 text-[#2563EB] font-bold flex items-center justify-center shrink-0 border border-slate-200 shadow-2xs logo-fallback ${
+                                job.organizationLogo ? "hidden" : ""
+                              }`}
+                            >
+                              {(job.organizationName || "C").charAt(0).toUpperCase()}
+                            </div>
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-slate-600">

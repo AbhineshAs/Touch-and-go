@@ -12,7 +12,9 @@ import {
 } from "../../lib/api/auth";
 
 // Simulated browser storage environment for Node.js test runner
-const mockLocalStorage: Record<string, string> = {};
+const mockLocalStorage: Record<string, string> =
+  ((globalThis as any).__sharedMockStorage =
+    (globalThis as any).__sharedMockStorage || {});
 
 if (typeof (global as any).window === "undefined") {
   (global as any).window = {
@@ -34,7 +36,10 @@ if (typeof (global as any).window === "undefined") {
 
 describe("Auth Session Synchronization Unit Tests", () => {
   beforeEach(() => {
-    for (const k in mockLocalStorage) delete mockLocalStorage[k];
+    delete mockLocalStorage[AUTH_TOKEN_KEY];
+    delete mockLocalStorage[AUTH_USER_KEY];
+    delete mockLocalStorage[AUTH_ROLE_KEY];
+    delete mockLocalStorage["tag_candidate_record"];
   });
 
   it("Candidate signup sets stored token and candidate role in storage", async () => {
@@ -134,7 +139,7 @@ describe("Auth Session Synchronization Unit Tests", () => {
     const employerRedirect = "/employer/dashboard";
     const effectiveRole: "candidate" | "employer" = "candidate";
 
-    const resolvedRedirect = (effectiveRole === "employer")
+    const resolvedRedirect = ((effectiveRole as string) === "employer")
       ? (employerRedirect && employerRedirect.startsWith("/employer") ? employerRedirect : "/employer/dashboard")
       : (employerRedirect && !employerRedirect.startsWith("/employer") ? employerRedirect : "/candidate/dashboard");
 

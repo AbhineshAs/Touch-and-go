@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -24,18 +24,67 @@ import {
 import { MOCK_USERS, MOCK_ORGANIZATIONS } from "@/lib/mocks/data";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import {
+  getOrganizationProfile,
+  ORG_PROFILE_UPDATED_EVENT,
+} from "@/lib/organization/profileService";
+import { OrganizationProfile } from "@/types/organization";
 
 export function EmployerShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const { user: authUser, logout } = useAuth();
   const user = authUser || MOCK_USERS.employer;
-  const org = MOCK_ORGANIZATIONS[0];
+  const defaultOrg = MOCK_ORGANIZATIONS[0];
+  const [orgProfile, setOrgProfile] = useState<OrganizationProfile | null>(null);
+  const [instantLogo, setInstantLogo] = useState<string | null | undefined>(undefined);
+  const [instantName, setInstantName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const orgId = user?.organizationId || "org_razorwave";
+    const updateProfile = () => {
+      const current = getOrganizationProfile(orgId);
+      setOrgProfile(current);
+      if (current.logoUrl !== undefined) {
+        setInstantLogo(current.logoUrl);
+      }
+      if (current.name) {
+        setInstantName(current.name);
+      }
+    };
+
+    updateProfile();
+
+    const handleCustomUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        if (customEvent.detail.logoUrl !== undefined) {
+          setInstantLogo(customEvent.detail.logoUrl);
+        }
+        if (customEvent.detail.name) {
+          setInstantName(customEvent.detail.name);
+        }
+      }
+      updateProfile();
+    };
+
+    window.addEventListener(ORG_PROFILE_UPDATED_EVENT, handleCustomUpdate);
+    window.addEventListener("tag_org_update", handleCustomUpdate);
+    window.addEventListener("storage", updateProfile);
+    return () => {
+      window.removeEventListener(ORG_PROFILE_UPDATED_EVENT, handleCustomUpdate);
+      window.removeEventListener("tag_org_update", handleCustomUpdate);
+      window.removeEventListener("storage", updateProfile);
+    };
+  }, [user?.organizationId, pathname]);
+
+  const orgLogo = instantLogo !== undefined ? instantLogo : (orgProfile ? orgProfile.logoUrl : defaultOrg.logo);
+  const orgName = instantName || orgProfile?.name || defaultOrg.name;
 
   const mainNav = [
     { label: "Overview", href: "/employer/dashboard", icon: <LayoutDashboard className="w-4 h-4" /> },
     { label: "Jobs", href: "/employer/jobs", icon: <Briefcase className="w-4 h-4" /> },
-    { label: "Pipeline", href: "/employer/jobs/job_01/pipeline", icon: <SlidersHorizontal className="w-4 h-4" /> },
+    { label: "Applicants", href: "/employer/candidates", icon: <SlidersHorizontal className="w-4 h-4" /> },
     { label: "Interviews", href: "/employer/interviews", icon: <Calendar className="w-4 h-4" />, badge: 1 },
     { label: "Team", href: "/employer/team", icon: <Users className="w-4 h-4" /> },
     { label: "Analytics", href: "/employer/analytics", icon: <BarChart3 className="w-4 h-4" /> },
@@ -117,14 +166,20 @@ export function EmployerShell({ children }: { children: React.ReactNode }) {
 
             {/* Org mini card */}
             <div className="p-3 rounded-2xl bg-[#EDF3F8] border border-[#0A66C2]/20 flex items-center gap-2.5">
-              <img
-                src={org.logo}
-                alt={org.name}
-                className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
-              />
+              {orgLogo ? (
+                <img
+                  src={orgLogo}
+                  alt={orgName}
+                  className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center shrink-0 text-[#0A66C2]">
+                  <Building2 className="w-5 h-5" />
+                </div>
+              )}
               <div className="flex flex-col overflow-hidden">
                 <div className="flex items-center gap-1">
-                  <span className="text-xs font-bold text-slate-900 truncate">{org.name}</span>
+                  <span className="text-xs font-bold text-slate-900 truncate">{orgName}</span>
                   <ShieldCheck className="w-3.5 h-3.5 text-[#0A66C2] shrink-0" />
                 </div>
                 <span className="text-[10px] font-semibold text-[#0A66C2]">MCA Verified Entity</span>
@@ -223,11 +278,25 @@ export function EmployerShell({ children }: { children: React.ReactNode }) {
           <div className="pt-4 border-t border-black/10">
             <div className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-200">
               <div className="flex items-center gap-2.5 overflow-hidden">
-                <img
-                  src={user.avatarUrl}
-                  alt={user.name}
-                  className="w-8.5 h-8.5 rounded-full object-cover shrink-0 border border-slate-200"
-                />
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="w-8.5 h-8.5 rounded-full object-cover shrink-0 border border-slate-200"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = "none";
+                      const fallback = e.currentTarget.parentElement?.querySelector(".avatar-fallback") as HTMLElement;
+                      if (fallback) fallback.classList.remove("hidden");
+                    }}
+                  />
+                ) : null}
+                <div
+                  className={`w-8.5 h-8.5 rounded-full bg-[#0A66C2] text-white flex items-center justify-center font-bold text-xs shrink-0 avatar-fallback ${
+                    user.avatarUrl ? "hidden" : ""
+                  }`}
+                >
+                  {(user.name || "E").charAt(0).toUpperCase()}
+                </div>
                 <div className="flex flex-col overflow-hidden">
                   <span className="text-xs font-bold text-slate-900 truncate">{user.name}</span>
                   <span className="text-[10px] text-slate-500 truncate">Lead Recruiter</span>

@@ -190,6 +190,7 @@ export interface Job {
   benefits: string[];
   screeningQuestions: ScreeningQuestion[];
   status: JobStatus;
+  deadline?: string;
   publishedAt: string;
   updatedAt: string;
   applicantsCount: number;
@@ -294,17 +295,25 @@ export interface Interview {
   applicationId: string;
   candidateId: string;
   candidateName: string;
+  candidateEmail?: string;
   jobId: string;
   jobTitle: string;
+  roundName?: string;
   scheduledAt: string;
   durationMinutes: number;
   interviewerName: string;
   interviewerRole: string;
   interviewerEmail: string;
   meetingLink: string;
+  meetingPlatform?: string;
   candidateNote?: string;
+  internalNotes?: string;
   status: "Scheduled" | "Completed" | "Cancelled" | "Rescheduled";
+  cancellationReason?: string;
+  cancelledAt?: string;
   scorecard?: InterviewScorecard;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NotificationItem {

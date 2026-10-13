@@ -5,17 +5,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/States";
-import { SAMPLE_JOBS_CATALOGUE } from "@/lib/candidate/jobs/matcher";
 import { formatSalaryRange } from "@/lib/utils";
 import { Bookmark, Trash2, ArrowRight } from "lucide-react";
 import { useCandidate } from "@/lib/candidate/context/CandidateContext";
 
 export default function SavedJobsPage() {
-  const { savedJobIds, toggleSaveJob } = useCandidate();
+  const { savedJobIds, toggleSaveJob, availableJobs } = useCandidate();
 
   const savedJobs = useMemo(() => {
-    return SAMPLE_JOBS_CATALOGUE.filter((j) => savedJobIds.includes(j.id));
-  }, [savedJobIds]);
+    return availableJobs.filter((j) => savedJobIds.includes(j.id));
+  }, [availableJobs, savedJobIds]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -24,7 +23,7 @@ export default function SavedJobsPage() {
           Saved Opportunities ({savedJobs.length})
         </h1>
         <p className="text-xs sm:text-sm text-text-secondary">
-          Sample jobs you have bookmarked to review or explore further.
+          Positions you have bookmarked to review or explore further.
         </p>
       </div>
 
@@ -32,7 +31,7 @@ export default function SavedJobsPage() {
         <EmptyState
           icon={<Bookmark className="w-8 h-8 text-text-muted" />}
           title="No saved jobs yet"
-          description="Click the bookmark icon on any sample job card to save it here for later review."
+          description="Click the bookmark icon on any job card to save it here for later review."
           action={{
             label: "Explore Jobs",
             onClick: () => (window.location.href = "/candidate/jobs"),
@@ -45,11 +44,20 @@ export default function SavedJobsPage() {
               <div className="flex flex-col gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
-                    <img
-                      src={job.organizationLogo}
-                      alt={job.organizationName}
-                      className="w-11 h-11 rounded-xl object-cover border border-border shrink-0"
-                    />
+                    {job.organizationLogo ? (
+                      <img
+                        src={job.organizationLogo}
+                        alt={job.organizationName}
+                        className="w-11 h-11 rounded-xl object-contain p-0.5 border border-border shrink-0 bg-white"
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-11 h-11 rounded-xl bg-primary-soft text-primary font-bold flex items-center justify-center text-sm border border-border shrink-0">
+                        {job.organizationName ? job.organizationName.charAt(0).toUpperCase() : "C"}
+                      </div>
+                    )}
                     <div className="flex flex-col">
                       <span className="text-xs font-semibold text-text-secondary">
                         {job.organizationName}
