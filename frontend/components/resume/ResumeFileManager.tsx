@@ -259,7 +259,10 @@ export function ResumeFileManager({
 
       {/* STATE A: ACTIVE RESUME EXISTS */}
       {uploadedResume ? (
-        <div className="bg-white border-2 border-indigo-150 hover:border-[#4F46E5]/40 rounded-2xl p-5 sm:p-6 shadow-[0_4px_20px_-4px_rgba(79,70,229,0.08)] flex flex-col gap-5 transition-all">
+        <div className={cn(
+          "bg-white border border-slate-200/90 hover:border-indigo-300 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col gap-4 transition-all",
+          compact && "p-3.5 gap-3"
+        )}>
           {/* Top Bar: Title & Status */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div className="flex items-center gap-3">

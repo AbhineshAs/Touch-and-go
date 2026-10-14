@@ -257,7 +257,14 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
               </div>
             </Link>
 
-            <div className="flex items-center justify-between p-2.5 mt-2 rounded-xl bg-slate-50 border border-slate-200/80 gap-2">
+            <div
+              className={cn(
+                "flex items-center justify-between p-2.5 mt-2 rounded-xl border gap-2 transition-colors",
+                pathname.startsWith("/candidate/profile")
+                  ? "bg-blue-50/70 border-blue-200/80"
+                  : "bg-slate-50 border-slate-200/80"
+              )}
+            >
               <Link
                 href="/candidate/profile"
                 onClick={() => setMobileSidebarOpen(false)}
