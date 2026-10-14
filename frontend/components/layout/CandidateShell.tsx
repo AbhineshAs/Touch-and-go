@@ -192,22 +192,22 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
                     href={item.href}
                     onClick={() => setMobileSidebarOpen(false)}
                     className={cn(
-                      "flex items-center justify-between rounded-lg text-sm transition-colors px-3 py-2.5",
+                      "rounded-lg text-sm transition-colors px-3.5 py-2.5 flex items-center justify-between gap-3",
                       isActive
                         ? "bg-blue-50 text-blue-600 font-semibold"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
                     )}
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <span className={cn(isActive ? "text-blue-600" : "text-slate-400")}>
                         {item.icon}
                       </span>
-                      <span>{item.label}</span>
+                      <span className="truncate">{item.label}</span>
                     </div>
                     {item.badge !== undefined && (
                       <span
                         className={cn(
-                          "text-xs px-2 py-0.5 rounded-full font-mono font-medium",
+                          "text-xs px-2 py-0.5 rounded-full font-mono font-medium shrink-0",
                           isActive
                             ? "bg-blue-100 text-blue-700"
                             : "bg-slate-100 text-slate-600 border border-slate-200/80"
@@ -228,15 +228,15 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
               href="/candidate/notifications"
               onClick={() => setMobileSidebarOpen(false)}
               className={cn(
-                "flex items-center justify-between rounded-lg text-sm transition-colors px-3 py-2.5",
+                "flex items-center justify-between gap-3 rounded-lg text-sm transition-colors px-3.5 py-2.5",
                 pathname === "/candidate/notifications"
                   ? "bg-blue-50 text-blue-600 font-semibold"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
               )}
             >
-              <div className="flex items-center gap-3">
-                <Bell className={cn("w-4 h-4", pathname === "/candidate/notifications" ? "text-blue-600" : "text-slate-400")} />
-                <span>Notifications</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <Bell className={cn("w-4 h-4 shrink-0", pathname === "/candidate/notifications" ? "text-blue-600" : "text-slate-400")} />
+                <span className="truncate">Notifications</span>
               </div>
               <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
             </Link>
@@ -245,23 +245,24 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
               href="/candidate/settings"
               onClick={() => setMobileSidebarOpen(false)}
               className={cn(
-                "flex items-center justify-between rounded-lg text-sm transition-colors px-3 py-2.5",
+                "flex items-center justify-between gap-3 rounded-lg text-sm transition-colors px-3.5 py-2.5",
                 pathname === "/candidate/settings"
                   ? "bg-blue-50 text-blue-600 font-semibold"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
+                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
               )}
             >
-              <div className="flex items-center gap-3">
-                <Settings className={cn("w-4 h-4", pathname === "/candidate/settings" ? "text-blue-600" : "text-slate-400")} />
-                <span>Settings &amp; Privacy</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <Settings className={cn("w-4 h-4 shrink-0", pathname === "/candidate/settings" ? "text-blue-600" : "text-slate-400")} />
+                <span className="truncate">Settings &amp; Privacy</span>
               </div>
             </Link>
 
-            <div className="flex items-center justify-between p-2.5 mt-2 rounded-xl bg-slate-50 border border-slate-200/80">
+            <div className="flex items-center justify-between p-2.5 mt-2 rounded-xl bg-slate-50 border border-slate-200/80 gap-2">
               <Link
                 href="/candidate/profile"
                 onClick={() => setMobileSidebarOpen(false)}
                 className="flex items-center gap-2.5 min-w-0 flex-1 group"
+                title={`${candidateName} (${candidateEmail})`}
               >
                 {candidateAvatar ? (
                   <img
@@ -274,11 +275,11 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
                     {candidateName.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-xs font-semibold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs font-semibold text-slate-900 truncate block group-hover:text-blue-600 transition-colors">
                     {candidateName}
                   </span>
-                  <span className="text-[11px] text-slate-500 font-normal truncate">
+                  <span className="text-[11px] text-slate-500 font-normal truncate block">
                     {candidateEmail}
                   </span>
                 </div>
@@ -290,7 +291,7 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
                 }}
                 title="Sign Out"
                 type="button"
-                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0 ml-1"
+                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
               >
                 <LogOut className="w-4 h-4" />
               </button>
