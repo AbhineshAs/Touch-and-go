@@ -246,13 +246,13 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileSidebarOpen(false)}
               className={cn(
                 "flex items-center justify-between gap-3 rounded-lg text-sm transition-colors px-3.5 py-2.5",
-                pathname === "/candidate/settings"
+                pathname.startsWith("/candidate/settings")
                   ? "bg-blue-50 text-blue-600 font-semibold"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
               )}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <Settings className={cn("w-4 h-4 shrink-0", pathname === "/candidate/settings" ? "text-blue-600" : "text-slate-400")} />
+                <Settings className={cn("w-4 h-4 shrink-0", pathname.startsWith("/candidate/settings") ? "text-blue-600" : "text-slate-400")} />
                 <span className="truncate">Settings &amp; Privacy</span>
               </div>
             </Link>
