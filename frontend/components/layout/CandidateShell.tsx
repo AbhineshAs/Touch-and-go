@@ -229,13 +229,13 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
               onClick={() => setMobileSidebarOpen(false)}
               className={cn(
                 "flex items-center justify-between gap-3 rounded-lg text-sm transition-colors px-3.5 py-2.5",
-                pathname === "/candidate/notifications"
+                pathname.startsWith("/candidate/notifications")
                   ? "bg-blue-50 text-blue-600 font-semibold"
                   : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-medium"
               )}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <Bell className={cn("w-4 h-4 shrink-0", pathname === "/candidate/notifications" ? "text-blue-600" : "text-slate-400")} />
+                <Bell className={cn("w-4 h-4 shrink-0", pathname.startsWith("/candidate/notifications") ? "text-blue-600" : "text-slate-400")} />
                 <span className="truncate">Notifications</span>
               </div>
               <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0" />
@@ -358,10 +358,15 @@ export function CandidateShell({ children }: { children: React.ReactNode }) {
 
               <Link
                 href="/candidate/notifications"
-                className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200/70 text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors shrink-0"
+                className={cn(
+                  "relative flex h-10 w-10 items-center justify-center rounded-lg border transition-colors shrink-0",
+                  pathname.startsWith("/candidate/notifications")
+                    ? "border-blue-200 bg-blue-50 text-blue-600"
+                    : "border-slate-200/70 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                )}
                 aria-label="Notifications"
               >
-                <Bell className="w-4.5 h-4.5 text-slate-600" />
+                <Bell className={cn("w-4.5 h-4.5", pathname.startsWith("/candidate/notifications") ? "text-blue-600" : "text-slate-600")} />
                 <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-blue-600 ring-2 ring-white" />
               </Link>
             </div>
